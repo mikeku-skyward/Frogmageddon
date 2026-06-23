@@ -45,4 +45,14 @@ public class CanvasRenderer : IRenderer
                 state.Player.Size);
         }
     }
+
+    public async Task RenderStartScreenAsync(int canvasWidth, int canvasHeight, StartButtonBounds buttonBounds)
+    {
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("drawStartScreen",
+                _canvas, canvasWidth, canvasHeight,
+                buttonBounds.X, buttonBounds.Y, buttonBounds.Width, buttonBounds.Height);
+        }
+    }
 }

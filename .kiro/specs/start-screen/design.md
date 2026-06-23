@@ -1,56 +1,41 @@
-# Design Document: Start Screen
+# Design Document
 
 ## Overview
 
-The Frogmageddon game currently begins gameplay immediately when the page loads. This design introduces a "start screen" state that displays a title and prompt, requiring the user to press Enter or click anywhere on the canvas before transitioning to active gameplay.
+The start screen feature introduces a `GamePhase` state machine that controls whether the game loop renders the start screen or processes active gameplay. The current auto-start behavior in `GamePage.razor` is replaced with a two-phase approach: the game loop initializes into a `StartScreen` phase, renders the title and button on the canvas, then transitions to `Playing` when the player clicks the start button or presses Enter.
 
-The approach adds a `GamePhase` enum to the existing `GameState` model, then gates the game loop's update/render logic on the current phase. The start screen is rendered via the existing `CanvasRenderer` and `gameInterop.js` pipeline—no additional Blazor UI overlay is needed. Input detection for the start trigger is handled through the existing `InputManager` and a new click event in the JS interop layer.
+All rendering happens on the existing 800×600 canvas via JS interop — no HTML overlays are introduced. The `InputManager` is extended to handle Enter key presses and mouse click events, and the `GameLoop.Tick` method branches logic based on the current phase.
 
 ## Architecture
 
-```mermaid
-graph TD
-    subgraph Blazor Page
-        GP[GamePage.razor]
-    end
+### Component Diagram
 
-    subgraph Game Engine
-        GL[GameLoop]
-        IM[InputManager]
-        CR[CanvasRenderer]
-    end
-
-    subgraph Models
-        GS[GameState]
-        Phase[GamePhase enum]
-    end
-
-    subgraph JS Interop
-        JI[gameInterop.js]
-    end
-
-    GP --> GL
-    GL --> IM
-    GL --> GS
-    GL --> CR
-    GS --> Phase
-    CR --> JI
-    GL --> JI
-    JI -->|Tick, SetKeyDown, SetKeyUp, OnCanvasClick| GL
+```
+GamePage.razor
+    └── GameLoop (owns phase state machine)
+            ├── InputManager (keyboard + mouse input)
+            ├── CanvasRenderer
+            │       ├── RenderStartScreenAsync() ← new
+            │       └── RenderAsync(GameState)   ← existing
+            └── GameState (player, canvas dimensions)
 ```
 
-```mermaid
-stateDiagram-v2
-    [*] --> StartScreen
-    StartScreen --> Playing : Enter pressed OR Canvas clicked
-    Playing --> Playing : Game loop ticks
+### State Machine
+
+```
+┌─────────────┐   Enter key / Click in button   ┌──────────────┐
+│ StartScreen  │ ──────────────────────────────► │   Playing    │
+└─────────────┘                                  └──────────────┘
+     │                                                  │
+     │  Tick → render start screen only                 │  Tick → update + render gameplay
+     │  Ignore WASD movement                            │  Ignore Enter as start trigger
 ```
 
 ## Components and Interfaces
 
-### Component 1: GamePhase Enum
+### GamePhase Enum
 
-**Purpose**: Represents the discrete phases the game can be in.
+A new enum representing the two distinct execution phases.
 
 ```csharp
 namespace BlazorAsteroids.Game.Models;
@@ -62,274 +47,317 @@ public enum GamePhase
 }
 ```
 
-### Component 2: GameState (Modified)
+### StartButtonBounds Record
 
-**Purpose**: Holds the current game phase alongside existing state.
-
-```csharp
-public class GameState : IGameState
-{
-    public GamePhase CurrentPhase { get; set; } = GamePhase.StartScreen;
-    // ... existing properties unchanged
-}
-```
-
-**Interface change** — `IGameState` gains a read-only property:
+Encapsulates the button hit-detection rectangle. Computed from canvas dimensions.
 
 ```csharp
-public interface IGameState
+namespace BlazorAsteroids.Game.Models;
+
+public record StartButtonBounds(float X, float Y, float Width, float Height)
 {
-    GamePhase CurrentPhase { get; }
-    Player Player { get; }
-    int CanvasWidth { get; }
-    int CanvasHeight { get; }
-    void Update(float deltaTime, Vector2 movementDirection);
-}
-```
-
-### Component 3: GameLoop (Modified)
-
-**Purpose**: Gates update/render logic on `CurrentPhase`. Handles the start trigger.
-
-```csharp
-// New method added to GameLoop
-[JSInvokable]
-public void OnCanvasClick()
-{
-    if (_gameState.CurrentPhase == GamePhase.StartScreen)
+    public bool Contains(float clickX, float clickY)
     {
-        _gameState.CurrentPhase = GamePhase.Playing;
+        return clickX >= X && clickX <= X + Width
+            && clickY >= Y && clickY <= Y + Height;
+    }
+
+    public static StartButtonBounds Create(int canvasWidth, int canvasHeight)
+    {
+        const float buttonWidth = 160f;
+        const float buttonHeight = 50f;
+        float x = (canvasWidth - buttonWidth) / 2f;
+        float y = (canvasHeight / 2f) + 40f; // Below vertical center
+        return new StartButtonBounds(x, y, buttonWidth, buttonHeight);
     }
 }
 ```
 
-**Modified Tick method** — checks phase before processing:
+### InputManager Changes
+
+Extend `InputManager` to accept Enter key and mouse click coordinates.
 
 ```csharp
-[JSInvokable]
-public void Tick(float deltaTimeMs)
+public class InputManager : IInputManager
 {
-    if (deltaTimeMs < 0 || !_isRunning)
-        return;
+    private static readonly HashSet<string> ValidKeys = new() { "w", "a", "s", "d", "enter" };
+    private readonly HashSet<string> _pressedKeys = new();
+    private (float X, float Y)? _pendingClick;
 
-    if (_gameState.CurrentPhase == GamePhase.StartScreen)
+    public void SetKeyDown(string key) { /* existing + now accepts "enter" */ }
+    public void SetKeyUp(string key) { /* existing */ }
+
+    public void SetMouseClick(float x, float y)
     {
-        // Check for Enter key to start
+        _pendingClick = (x, y);
+    }
+
+    public (float X, float Y)? ConsumePendingClick()
+    {
+        var click = _pendingClick;
+        _pendingClick = null;
+        return click;
+    }
+
+    public Vector2 GetMovementDirection() { /* existing */ }
+    public bool IsKeyPressed(string key) { /* existing */ }
+}
+```
+
+### IInputManager Interface Update
+
+```csharp
+public interface IInputManager
+{
+    void SetKeyDown(string key);
+    void SetKeyUp(string key);
+    Vector2 GetMovementDirection();
+    bool IsKeyPressed(string key);
+    void SetMouseClick(float x, float y);
+    (float X, float Y)? ConsumePendingClick();
+}
+```
+
+### GameLoop Changes
+
+The `GameLoop` gains a `CurrentPhase` property and branches `Tick` logic accordingly.
+
+```csharp
+public class GameLoop : IGameLoop, IDisposable
+{
+    private GamePhase _currentPhase = GamePhase.StartScreen;
+    private StartButtonBounds _buttonBounds;
+
+    public GamePhase CurrentPhase => _currentPhase;
+
+    public async Task InitializeAsync(ElementReference canvas)
+    {
+        // Existing initialization...
+        _buttonBounds = StartButtonBounds.Create(_gameState.CanvasWidth, _gameState.CanvasHeight);
+        _isRunning = true;
+
+        // Render the start screen immediately after initialization
+        await _renderer.RenderStartScreenAsync(_gameState.CanvasWidth, _gameState.CanvasHeight, _buttonBounds);
+    }
+
+    [JSInvokable]
+    public void Tick(float deltaTimeMs)
+    {
+        if (deltaTimeMs < 0 || !_isRunning) return;
+
+        float deltaTimeSec = MathF.Min(deltaTimeMs / 1000f, MAX_DELTA_TIME);
+
+        if (_currentPhase == GamePhase.StartScreen)
+        {
+            HandleStartScreenInput();
+            _ = _renderer.RenderStartScreenAsync(_gameState.CanvasWidth, _gameState.CanvasHeight, _buttonBounds);
+        }
+        else
+        {
+            Vector2 direction = _inputManager.GetMovementDirection();
+            _gameState.Update(deltaTimeSec, direction);
+            _ = _renderer.RenderAsync(_gameState);
+        }
+    }
+
+    private void HandleStartScreenInput()
+    {
+        // Check Enter key
         if (_inputManager.IsKeyPressed("enter"))
         {
-            _gameState.CurrentPhase = GamePhase.Playing;
+            TransitionToPlaying();
+            return;
         }
 
-        // Render the start screen
-        _ = _renderer.RenderStartScreenAsync(_gameState);
-        return;
+        // Check mouse click
+        var click = _inputManager.ConsumePendingClick();
+        if (click.HasValue && _buttonBounds.Contains(click.Value.X, click.Value.Y))
+        {
+            TransitionToPlaying();
+        }
     }
 
-    // Existing playing logic unchanged
-    float deltaTimeSec = MathF.Min(deltaTimeMs / 1000f, MAX_DELTA_TIME);
-    Vector2 direction = _inputManager.GetMovementDirection();
-    _gameState.Update(deltaTimeSec, direction);
-    _ = _renderer.RenderAsync(_gameState);
+    private void TransitionToPlaying()
+    {
+        _currentPhase = GamePhase.Playing;
+        _gameState.Player.Position = new Vector2(
+            _gameState.CanvasWidth / 2f,
+            _gameState.CanvasHeight / 2f);
+    }
+
+    [JSInvokable]
+    public void OnMouseClick(float x, float y)
+    {
+        _inputManager.SetMouseClick(x, y);
+    }
 }
 ```
 
-### Component 4: InputManager (Modified)
-
-**Purpose**: Recognizes "Enter" as a valid key so `IsKeyPressed("enter")` works.
-
-```csharp
-private static readonly HashSet<string> ValidKeys = new() { "w", "a", "s", "d", "enter" };
-```
-
-### Component 5: IRenderer (Modified)
-
-**Purpose**: Adds a method to render the start screen overlay.
+### IRenderer Interface Update
 
 ```csharp
 public interface IRenderer
 {
     Task InitializeAsync(ElementReference canvas);
     Task RenderAsync(GameState state);
-    Task RenderStartScreenAsync(GameState state);
+    Task RenderStartScreenAsync(int canvasWidth, int canvasHeight, StartButtonBounds buttonBounds);
     Task ClearAsync();
 }
 ```
 
-### Component 6: CanvasRenderer (Modified)
+### CanvasRenderer Changes
 
-**Purpose**: Implements start screen rendering — draws title text and prompt.
+Add `RenderStartScreenAsync` that calls a new JS interop function.
 
 ```csharp
-public async Task RenderStartScreenAsync(GameState state)
+public async Task RenderStartScreenAsync(int canvasWidth, int canvasHeight, StartButtonBounds buttonBounds)
 {
-    await ClearAsync();
-
     if (_module is not null)
     {
         await _module.InvokeVoidAsync("drawStartScreen",
-            _canvas,
-            state.CanvasWidth,
-            state.CanvasHeight);
+            _canvas, canvasWidth, canvasHeight,
+            buttonBounds.X, buttonBounds.Y, buttonBounds.Width, buttonBounds.Height);
     }
 }
 ```
 
-### Component 7: gameInterop.js (Modified)
+### gameInterop.js Changes
 
-**Purpose**: Adds canvas click listener that calls back to C#, and a `drawStartScreen` function.
+Add `drawStartScreen` function and mouse click listener.
 
 ```javascript
-// Inside initializeGame — add click listener
-canvasElement.addEventListener('click', () => {
-    dotNetRef.invokeMethodAsync('OnCanvasClick');
-});
-
-// New exported function
-export function drawStartScreen(canvasElement, width, height) {
+export function drawStartScreen(canvasElement, canvasWidth, canvasHeight, btnX, btnY, btnW, btnH) {
     const ctx = canvasElement.getContext('2d');
-    ctx.clearRect(0, 0, width, height);
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-    // Title
+    // Title text
     ctx.fillStyle = 'white';
     ctx.font = 'bold 48px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('FROGMAGEDDON', width / 2, height / 2 - 40);
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Frogmageddon', canvasWidth / 2, canvasHeight / 2 - 60);
 
-    // Prompt
-    ctx.font = '20px monospace';
-    ctx.fillStyle = '#aaaaaa';
-    ctx.fillText('Press ENTER or Click to Start', width / 2, height / 2 + 30);
+    // Start button rectangle
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(btnX, btnY, btnW, btnH);
+
+    // Button border
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(btnX, btnY, btnW, btnH);
+
+    // Button text
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 24px monospace';
+    ctx.fillText('Start', btnX + btnW / 2, btnY + btnH / 2);
 }
 ```
+
+Mouse click registration added to `initializeGame`:
+
+```javascript
+canvasElement.addEventListener('click', (e) => {
+    const rect = canvasElement.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    dotNetRef.invokeMethodAsync('OnMouseClick', x, y);
+});
+```
+
+### index.html Changes
+
+Remove the loading spinner content from `<div id="app">`:
+
+```html
+<div id="app"></div>
+```
+
+The `#app` div remains empty so the page loads to a blank (black via CSS) screen until Blazor renders the canvas.
+
+### GamePage.razor Changes
+
+The `OnAfterRenderAsync` method still calls `InitializeGameAsync`, but the game loop now starts in `StartScreen` phase instead of immediately processing gameplay. No auto-start occurs because `GameLoop.Tick` only renders the start screen until the player triggers the transition.
 
 ## Data Models
 
-### GamePhase Enum
+### GamePhase
 
-```csharp
-public enum GamePhase
-{
-    StartScreen,
-    Playing
-}
-```
+| Value | Description |
+|-------|-------------|
+| `StartScreen` | Game loop renders title + button, ignores movement input |
+| `Playing` | Game loop processes input, updates state, renders player |
 
-**Validation Rules**:
-- `GameState.CurrentPhase` defaults to `StartScreen`
-- Transition from `StartScreen` → `Playing` is one-way (no return to start screen in this iteration)
+### StartButtonBounds
 
-## Correctness Properties
-
-The following properties must hold for the start-screen feature and are suitable for property-based testing:
-
-### Property 1: Initial Phase Invariant
-
-For any newly constructed `GameState`, `CurrentPhase` is always `GamePhase.StartScreen`. No sequence of constructor arguments or initialization paths may produce a `GameState` that begins in any other phase.
-
-### Property 2: Start Trigger Exclusivity
-
-The transition from `StartScreen` to `Playing` occurs if and only if the input is an Enter key press OR a canvas click event. For all other inputs (WASD keys, arbitrary key presses, mouse move, etc.) received while in `StartScreen` phase, `CurrentPhase` remains `StartScreen`.
-
-### Property 3: Transition Idempotency
-
-Once `CurrentPhase == GamePhase.Playing`, any subsequent Enter key press or canvas click event does not change `CurrentPhase`. The phase remains `Playing` regardless of how many start-trigger inputs are received after the initial transition.
-
-### Property 4: StartScreen Freezes Game State
-
-While `CurrentPhase == GamePhase.StartScreen`, for any number of `Tick(deltaTime)` calls with any `deltaTime` value, the player's position, velocity, and all other gameplay state remain unchanged. Only rendering of the start screen occurs — no `GameState.Update()` is invoked.
+| Property | Type | Description |
+|----------|------|-------------|
+| `X` | float | Left edge x-coordinate |
+| `Y` | float | Top edge y-coordinate |
+| `Width` | float | Button width (160px) |
+| `Height` | float | Button height (50px) |
 
 ## Error Handling
 
-### Error Scenario 1: Canvas Click Before Initialization
-
-**Condition**: User clicks the canvas before `initializeGame` completes  
-**Response**: The click listener is only registered inside `initializeGame`, so premature clicks are simply ignored  
-**Recovery**: N/A — no error state
-
-### Error Scenario 2: Multiple Start Triggers Simultaneously
-
-**Condition**: User presses Enter and clicks at the same time during start screen  
-**Response**: Both handlers check `CurrentPhase == StartScreen` before transitioning. The first one transitions to `Playing`; the second finds it already `Playing` and does nothing  
-**Recovery**: N/A — idempotent transition
-
-### Error Scenario 3: Enter Key During Gameplay
-
-**Condition**: User presses Enter while already in `Playing` phase  
-**Response**: Enter is added to `ValidKeys` in `InputManager` but has no effect during gameplay since `GetMovementDirection()` only checks WASD. The `Tick` method only checks Enter when `CurrentPhase == StartScreen`  
-**Recovery**: N/A — no unintended behavior
+- **Mouse click outside canvas**: The `getBoundingClientRect()` calculation ensures coordinates are relative to the canvas. Clicks outside the canvas element don't fire the canvas click listener.
+- **Rapid clicks/key presses during transition**: The phase check in `Tick` ensures that once `_currentPhase` is `Playing`, start-screen input handling is skipped entirely.
+- **Negative deltaTime**: Existing guard in `Tick` discards the frame.
+- **Canvas context loss**: Existing `contextlost`/`contextrestored` handlers in `gameInterop.js` continue to work — the start screen will simply re-render on restore.
 
 ## Testing Strategy
 
-### Unit Testing Approach
+### Unit Tests
 
-- **GameState phase transitions**: Verify `CurrentPhase` starts as `StartScreen` and can transition to `Playing`
-- **GameLoop.Tick in StartScreen phase**: Verify no position updates occur, `RenderStartScreenAsync` is called
-- **GameLoop.Tick in Playing phase**: Verify existing behavior unchanged (movement, rendering)
-- **GameLoop.OnCanvasClick**: Verify transitions from `StartScreen` to `Playing`, no-op when already `Playing`
-- **InputManager**: Verify "enter" is tracked correctly via `SetKeyDown`/`IsKeyPressed`
+- Verify `StartButtonBounds.Contains` with specific in-bounds and out-of-bounds coordinates
+- Verify `StartButtonBounds.Create` produces expected values for 800×600 canvas
+- Verify `GameLoop.Tick` renders start screen when phase is `StartScreen`
+- Verify `GameLoop.TransitionToPlaying` sets phase and player position
+- Verify `InputManager.SetMouseClick` and `ConsumePendingClick` store and clear click state
+- Verify Enter key is accepted by `InputManager.SetKeyDown`
 
-### Integration Testing Approach
+### Property-Based Tests
 
-- End-to-end test: Load page → verify start screen renders → press Enter → verify gameplay begins
-- End-to-end test: Load page → verify start screen renders → click canvas → verify gameplay begins
+- Button centering holds for arbitrary canvas widths
+- Hit detection correctness for random (x, y) coordinates against computed button bounds
+- Enter key press during Playing phase never changes phase
+- WASD input during StartScreen phase never changes player position
+- Player position equals canvas center after transition for arbitrary dimensions
 
-## Sequence Diagrams
+### Integration Tests
 
-### Start Screen → Gameplay Transition (Enter Key)
+- Full initialization flow: GamePage renders canvas → GameLoop starts in StartScreen → start screen is drawn
+- Click on button transitions to gameplay and renders player
+- Enter key press transitions to gameplay
 
-```mermaid
-sequenceDiagram
-    participant JS as gameInterop.js
-    participant GL as GameLoop
-    participant IM as InputManager
-    participant GS as GameState
-    participant CR as CanvasRenderer
+## Correctness Properties
 
-    Note over GL,GS: Phase = StartScreen
-    JS->>GL: Tick(deltaTime)
-    GL->>IM: IsKeyPressed("enter")
-    IM-->>GL: false
-    GL->>CR: RenderStartScreenAsync(state)
-    CR->>JS: drawStartScreen(canvas, w, h)
+*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-    Note over JS: User presses Enter
-    JS->>GL: SetKeyDown("enter")
-    GL->>IM: SetKeyDown("enter")
+### Property 1: Start button is horizontally centered
 
-    JS->>GL: Tick(deltaTime)
-    GL->>IM: IsKeyPressed("enter")
-    IM-->>GL: true
-    GL->>GS: CurrentPhase = Playing
-    Note over GL,GS: Phase = Playing
-    GL->>IM: GetMovementDirection()
-    GL->>GS: Update(deltaTime, direction)
-    GL->>CR: RenderAsync(state)
-```
+*For any* canvas width, the start button's x-position SHALL equal `(canvasWidth - buttonWidth) / 2`, ensuring the button is always horizontally centered regardless of canvas dimensions.
 
-### Start Screen → Gameplay Transition (Click)
+**Validates: Requirements 2.3**
 
-```mermaid
-sequenceDiagram
-    participant JS as gameInterop.js
-    participant GL as GameLoop
-    participant GS as GameState
-    participant CR as CanvasRenderer
+### Property 2: Click hit detection determines state transition
 
-    Note over GL,GS: Phase = StartScreen
-    JS->>GL: Tick(deltaTime)
-    GL->>CR: RenderStartScreenAsync(state)
+*For any* click coordinates (x, y) on the canvas while in StartScreen phase, the game SHALL transition to Playing if and only if the coordinates fall within the start button rectangle boundaries (x >= btnX AND x <= btnX + btnWidth AND y >= btnY AND y <= btnY + btnHeight).
 
-    Note over JS: User clicks canvas
-    JS->>GL: OnCanvasClick()
-    GL->>GS: CurrentPhase = Playing
-    Note over GL,GS: Phase = Playing
+**Validates: Requirements 3.1, 3.3**
 
-    JS->>GL: Tick(deltaTime)
-    GL->>CR: RenderAsync(state)
-```
+### Property 3: Enter key is ignored during Playing phase
 
-## Dependencies
+*For any* game state in the Playing phase, pressing the Enter key SHALL not change the game phase — the phase remains Playing.
 
-- No new external dependencies required
-- All changes use existing Blazor JSInterop and Canvas 2D API
-- Leverages existing `gameInterop.js` module pattern
+**Validates: Requirements 4.3**
+
+### Property 4: No player movement during StartScreen phase
+
+*For any* movement input (WASD key combination) while the game is in StartScreen phase, the player's position and rotation SHALL remain unchanged after a Tick is processed.
+
+**Validates: Requirements 5.2**
+
+### Property 5: Player initializes at canvas center on transition
+
+*For any* valid canvas dimensions (width, height), when the game transitions from StartScreen to Playing, the player's position SHALL be set to (width / 2, height / 2).
+
+**Validates: Requirements 6.2**

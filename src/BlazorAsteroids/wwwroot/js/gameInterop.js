@@ -43,6 +43,14 @@ export function initializeGame(canvasElement, dotNetRef) {
             dotNetRef.invokeMethodAsync('SetKeyUp', e.key.toLowerCase());
         });
 
+        // Mouse click handling – compute coordinates relative to canvas
+        canvasElement.addEventListener('click', (e) => {
+            const rect = canvasElement.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            dotNetRef.invokeMethodAsync('OnMouseClick', x, y);
+        });
+
         // Game loop via requestAnimationFrame
         function gameLoop(timestamp) {
             // Skip rendering if context is lost
@@ -105,4 +113,40 @@ export function drawPlayer(canvasElement, x, y, rotation, size) {
     ctx.fill();
 
     ctx.restore();
+}
+
+/**
+ * Draws the start screen with title and start button.
+ * @param {HTMLCanvasElement} canvasElement - The canvas DOM element
+ * @param {number} canvasWidth - Canvas width
+ * @param {number} canvasHeight - Canvas height
+ * @param {number} btnX - Button X position
+ * @param {number} btnY - Button Y position
+ * @param {number} btnW - Button width
+ * @param {number} btnH - Button height
+ */
+export function drawStartScreen(canvasElement, canvasWidth, canvasHeight, btnX, btnY, btnW, btnH) {
+    const ctx = canvasElement.getContext('2d');
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+    // Title text
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 48px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Frogmageddon', canvasWidth / 2, canvasHeight / 2 - 60);
+
+    // Start button rectangle
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(btnX, btnY, btnW, btnH);
+
+    // Button border
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(btnX, btnY, btnW, btnH);
+
+    // Button text
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 24px monospace';
+    ctx.fillText('Start', btnX + btnW / 2, btnY + btnH / 2);
 }

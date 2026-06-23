@@ -5,8 +5,9 @@ namespace BlazorAsteroids.Game.Engine;
 
 public class InputManager : IInputManager
 {
-    private static readonly HashSet<string> ValidKeys = new() { "w", "a", "s", "d" };
+    private static readonly HashSet<string> ValidKeys = new() { "w", "a", "s", "d", "enter" };
     private readonly HashSet<string> _pressedKeys = new();
+    private (float X, float Y)? _pendingClick;
 
     public void SetKeyDown(string key)
     {
@@ -56,5 +57,17 @@ public class InputManager : IInputManager
             return false;
 
         return _pressedKeys.Contains(key.ToLowerInvariant());
+    }
+
+    public void SetMouseClick(float x, float y)
+    {
+        _pendingClick = (x, y);
+    }
+
+    public (float X, float Y)? ConsumePendingClick()
+    {
+        var click = _pendingClick;
+        _pendingClick = null;
+        return click;
     }
 }

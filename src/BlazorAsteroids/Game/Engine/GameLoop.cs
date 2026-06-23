@@ -16,6 +16,10 @@ public class GameLoop : IGameLoop, IDisposable
     private IJSObjectReference? _module;
     private DotNetObjectReference<GameLoop>? _dotNetRef;
     private bool _isRunning;
+    private GamePhase _currentPhase = GamePhase.StartScreen;
+    private StartButtonBounds _buttonBounds = null!;
+
+    public GamePhase CurrentPhase => _currentPhase;
 
     public GameLoop(IJSRuntime jsRuntime, IInputManager inputManager, GameState gameState, IRenderer renderer)
     {
@@ -41,6 +45,11 @@ public class GameLoop : IGameLoop, IDisposable
         await _module.InvokeVoidAsync("initializeGame", canvas, _dotNetRef);
 
         _isRunning = true;
+
+        _buttonBounds = StartButtonBounds.Create(_gameState.CanvasWidth, _gameState.CanvasHeight);
+
+        // Render start screen immediately
+        await _renderer.RenderStartScreenAsync(_gameState.CanvasWidth, _gameState.CanvasHeight, _buttonBounds);
     }
 
     [JSInvokable]
@@ -59,14 +68,47 @@ public class GameLoop : IGameLoop, IDisposable
         // Clamp to MAX_DELTA_TIME to prevent large jumps (e.g., tab backgrounded)
         deltaTimeSec = MathF.Min(deltaTimeSec, MAX_DELTA_TIME);
 
-        // Phase 1: Read Input
-        Vector2 direction = _inputManager.GetMovementDirection();
+        if (_currentPhase == GamePhase.StartScreen)
+        {
+            HandleStartScreenInput();
+            _ = _renderer.RenderStartScreenAsync(_gameState.CanvasWidth, _gameState.CanvasHeight, _buttonBounds);
+        }
+        else
+        {
+            // Phase 1: Read Input
+            Vector2 direction = _inputManager.GetMovementDirection();
 
-        // Phase 2: Update State
-        _gameState.Update(deltaTimeSec, direction);
+            // Phase 2: Update State
+            _gameState.Update(deltaTimeSec, direction);
 
-        // Phase 3: Render (fire and forget)
-        _ = _renderer.RenderAsync(_gameState);
+            // Phase 3: Render (fire and forget)
+            _ = _renderer.RenderAsync(_gameState);
+        }
+    }
+
+    private void HandleStartScreenInput()
+    {
+        // Check Enter key
+        if (_inputManager.IsKeyPressed("enter"))
+        {
+            TransitionToPlaying();
+            return;
+        }
+
+        // Check mouse click
+        var click = _inputManager.ConsumePendingClick();
+        if (click.HasValue && _buttonBounds.Contains(click.Value.X, click.Value.Y))
+        {
+            TransitionToPlaying();
+        }
+    }
+
+    private void TransitionToPlaying()
+    {
+        _currentPhase = GamePhase.Playing;
+        _gameState.Player.Position = new Vector2(
+            _gameState.CanvasWidth / 2f,
+            _gameState.CanvasHeight / 2f);
     }
 
     [JSInvokable]
@@ -79,6 +121,12 @@ public class GameLoop : IGameLoop, IDisposable
     public void SetKeyUp(string key)
     {
         _inputManager.SetKeyUp(key);
+    }
+
+    [JSInvokable]
+    public void OnMouseClick(float x, float y)
+    {
+        _inputManager.SetMouseClick(x, y);
     }
 
     public void Stop()
