@@ -5,8 +5,27 @@ namespace BlazorAsteroids.Game.Models;
 public class GameState : IGameState
 {
     public Player Player { get; set; } = new();
+    public Camera Camera { get; set; } = new();
+
+    /// <summary>
+    /// The viewport (canvas) width — what the player sees on screen.
+    /// </summary>
     public int CanvasWidth { get; set; }
+
+    /// <summary>
+    /// The viewport (canvas) height — what the player sees on screen.
+    /// </summary>
     public int CanvasHeight { get; set; }
+
+    /// <summary>
+    /// Full world width (the background image size).
+    /// </summary>
+    public float WorldWidth { get; set; }
+
+    /// <summary>
+    /// Full world height (the background image size).
+    /// </summary>
+    public float WorldHeight { get; set; }
 
     // Explicit interface implementation to satisfy IGameState.Player (read-only)
     Player IGameState.Player => Player;
@@ -20,13 +39,16 @@ public class GameState : IGameState
         Vector2 velocity = movementDirection * Player.Speed * deltaTime;
         Player.Position = Player.Position + velocity;
 
-        // Clamp position to canvas bounds
+        // Clamp position to world bounds (not canvas bounds)
         Player.Position = new Vector2(
-            Math.Clamp(Player.Position.X, Player.Size, CanvasWidth - Player.Size),
-            Math.Clamp(Player.Position.Y, Player.Size, CanvasHeight - Player.Size)
+            Math.Clamp(Player.Position.X, Player.Size, WorldWidth - Player.Size),
+            Math.Clamp(Player.Position.Y, Player.Size, WorldHeight - Player.Size)
         );
 
         // Update rotation to face movement direction
         Player.Rotation = MathF.Atan2(movementDirection.Y, movementDirection.X);
+
+        // Update camera to follow player
+        Camera.Follow(Player.Position);
     }
 }

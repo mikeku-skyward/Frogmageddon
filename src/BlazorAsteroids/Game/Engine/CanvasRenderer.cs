@@ -33,16 +33,15 @@ public class CanvasRenderer : IRenderer
 
     public async Task RenderAsync(GameState state)
     {
-        await ClearAsync();
+        if (_module is null) return;
 
-        if (_module is not null)
-        {
-            await _module.InvokeVoidAsync("drawPlayer",
-                _canvas,
-                state.Player.Position.X,
-                state.Player.Position.Y,
-                state.Player.Rotation,
-                state.Player.Size);
-        }
+        await _module.InvokeVoidAsync("renderFrame",
+            _canvas,
+            state.Camera.Position.X,
+            state.Camera.Position.Y,
+            state.Player.Position.X,
+            state.Player.Position.Y,
+            state.Player.Rotation,
+            state.Player.Size);
     }
 }
