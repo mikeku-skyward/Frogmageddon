@@ -1,0 +1,66 @@
+@page "/game"
+@using BlazorAsteroids.Game.Engine
+@using BlazorAsteroids.Game.Interfaces
+@using BlazorAsteroids.Game.Models
+@inject IJSRuntime JSRuntime
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="error-container">
+        <p class="error-message">@errorMessage</p>
+        <button @onclick="RetryInitialization">Retry</button>
+    </div>
+}
+
+<canvas @ref="canvasRef" width="800" height="600" tabindex="0"
+        style="background-color: black; display: block;"></canvas>
+
+@code {
+    private ElementReference canvasRef;
+    private GameLoop? gameLoop;
+    private string? errorMessage;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await InitializeGameAsync();
+        }
+    }
+
+    private async Task InitializeGameAsync()
+    {
+        try
+        {
+            errorMessage = null;
+
+            var inputManager = new InputManager();
+            var renderer = new CanvasRenderer(JSRuntime);
+            var gameState = new GameState
+            {
+                CanvasWidth = 800,
+                CanvasHeight = 600,
+                Player = new Player
+                {
+                    Position = new Vector2(400, 300),
+                    Speed = 200f,
+                    Size = 15f,
+                    Rotation = 0f
+                }
+            };
+
+            gameLoop = new GameLoop(JSRuntime, inputManager, gameState, renderer);
+            await gameLoop.InitializeAsync(canvasRef);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to initialize game: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task RetryInitialization()
+    {
+        await InitializeGameAsync();
+    }
+}

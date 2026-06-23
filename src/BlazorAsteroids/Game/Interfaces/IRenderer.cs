@@ -1,0 +1,11 @@
+using BlazorAsteroids.Game.Models;
+using Microsoft.AspNetCore.Components;
+
+namespace BlazorAsteroids.Game.Interfaces;
+
+public interface IRenderer
+{
+    Task InitializeAsync(ElementReference canvas);
+    Task RenderAsync(GameState state);
+    Task ClearAsync();
+}
