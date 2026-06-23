@@ -78,8 +78,25 @@ public class GameLoop : IGameLoop, IDisposable
             // Phase 1: Read Input
             Vector2 direction = _inputManager.GetMovementDirection();
 
+            // Get mouse position in world space for camera targeting
+            var mouse = _inputManager.MousePosition;
+            Vector2 cursorWorld = new Vector2(
+                mouse.X + _gameState.Camera.Position.X,
+                mouse.Y + _gameState.Camera.Position.Y
+            );
+
+            // Check for shooting
+            var click = _inputManager.ConsumePendingClick();
+            if (click.HasValue)
+            {
+                // Convert screen click to world position
+                float worldX = click.Value.X + _gameState.Camera.Position.X;
+                float worldY = click.Value.Y + _gameState.Camera.Position.Y;
+                _gameState.FireBullet(new Vector2(worldX, worldY));
+            }
+
             // Phase 2: Update State
-            _gameState.Update(deltaTimeSec, direction);
+            _gameState.Update(deltaTimeSec, direction, cursorWorld);
 
             // Phase 3: Render (fire and forget)
             _ = _renderer.RenderAsync(_gameState);
@@ -127,6 +144,12 @@ public class GameLoop : IGameLoop, IDisposable
     public void OnMouseClick(float x, float y)
     {
         _inputManager.SetMouseClick(x, y);
+    }
+
+    [JSInvokable]
+    public void OnMouseMove(float x, float y)
+    {
+        _inputManager.SetMousePosition(x, y);
     }
 
     public void Stop()

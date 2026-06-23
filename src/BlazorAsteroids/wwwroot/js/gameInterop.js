@@ -59,6 +59,14 @@ export function initializeGame(canvasElement, dotNetRef) {
             dotNetRef.invokeMethodAsync('OnMouseClick', x, y);
         });
 
+        // Mouse move handling – track cursor position relative to canvas
+        canvasElement.addEventListener('mousemove', (e) => {
+            const rect = canvasElement.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            dotNetRef.invokeMethodAsync('OnMouseMove', x, y);
+        });
+
         // Game loop via requestAnimationFrame
         function gameLoop(timestamp) {
             if (isContextLost) {
@@ -104,8 +112,9 @@ export function clearCanvas(canvasElement) {
  * @param {number} rotation - Player rotation in radians
  * @param {number} size - Player size for triangle dimensions
  * @param {number[]} frogData - Flat array of frog data [x, y, rotation, size, ...]
+ * @param {number[]} bulletData - Flat array of bullet data [x, y, radius, ...]
  */
-export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData) {
+export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData, bulletData) {
     const ctx = canvasElement.getContext('2d');
     const viewWidth = canvasElement.width;
     const viewHeight = canvasElement.height;
@@ -148,6 +157,25 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
             }
 
             drawFrog(ctx, frogX, frogY, frogRotation, frogSize);
+        }
+    }
+
+    // Draw bullets
+    if (bulletData && bulletData.length > 0) {
+        ctx.fillStyle = '#ffff00';
+        for (let i = 0; i < bulletData.length; i += 3) {
+            const bx = bulletData[i] - cameraX;
+            const by = bulletData[i + 1] - cameraY;
+            const br = bulletData[i + 2];
+
+            // Only draw if on screen
+            if (bx < -br || bx > viewWidth + br || by < -br || by > viewHeight + br) {
+                continue;
+            }
+
+            ctx.beginPath();
+            ctx.arc(bx, by, br, 0, Math.PI * 2);
+            ctx.fill();
         }
     }
 

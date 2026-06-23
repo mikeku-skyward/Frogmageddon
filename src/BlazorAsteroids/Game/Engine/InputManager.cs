@@ -8,6 +8,12 @@ public class InputManager : IInputManager
     private static readonly HashSet<string> ValidKeys = new() { "w", "a", "s", "d", "enter" };
     private readonly HashSet<string> _pressedKeys = new();
     private (float X, float Y)? _pendingClick;
+    private (float X, float Y) _mousePosition;
+
+    /// <summary>
+    /// Current mouse position in screen (canvas) coordinates.
+    /// </summary>
+    public (float X, float Y) MousePosition => _mousePosition;
 
     public void SetKeyDown(string key)
     {
@@ -62,6 +68,11 @@ public class InputManager : IInputManager
     public void SetMouseClick(float x, float y)
     {
         _pendingClick = (x, y);
+    }
+
+    public void SetMousePosition(float x, float y)
+    {
+        _mousePosition = (x, y);
     }
 
     public (float X, float Y)? ConsumePendingClick()

@@ -32,6 +32,7 @@ public class Frog
     public Vector2 Position { get; set; }
     public float Size { get; set; } = 24f;
     public float Rotation { get; set; }
+    public bool IsAlive { get; set; } = true;
 
     public Frog(Vector2 spawnPosition)
     {

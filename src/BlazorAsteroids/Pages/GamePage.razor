@@ -69,7 +69,7 @@
             };
 
             // Position camera on player immediately so it's visible on first frame
-            camera.Follow(gameState.Player.Position);
+            camera.SnapTo(gameState.Player.Position);
 
             gameLoop = new GameLoop(JSRuntime, inputManager, gameState, renderer);
             await gameLoop.InitializeAsync(canvasRef);

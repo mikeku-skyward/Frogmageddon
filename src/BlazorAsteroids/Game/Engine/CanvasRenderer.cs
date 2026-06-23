@@ -35,7 +35,7 @@ public class CanvasRenderer : IRenderer
     {
         if (_module is null) return;
 
-        // Build frog data as flat array: [x, y, rotation, size, x, y, rotation, size, ...]
+        // Build frog data as flat array: [x, y, rotation, size, ...]
         var frogData = new float[state.Frogs.Count * 4];
         for (int i = 0; i < state.Frogs.Count; i++)
         {
@@ -46,6 +46,16 @@ public class CanvasRenderer : IRenderer
             frogData[i * 4 + 3] = frog.Size;
         }
 
+        // Build bullet data as flat array: [x, y, radius, ...]
+        var bulletData = new float[state.Bullets.Count * 3];
+        for (int i = 0; i < state.Bullets.Count; i++)
+        {
+            var bullet = state.Bullets[i];
+            bulletData[i * 3] = bullet.Position.X;
+            bulletData[i * 3 + 1] = bullet.Position.Y;
+            bulletData[i * 3 + 2] = bullet.Radius;
+        }
+
         await _module.InvokeVoidAsync("renderFrame",
             _canvas,
             state.Camera.Position.X,
@@ -54,7 +64,8 @@ public class CanvasRenderer : IRenderer
             state.Player.Position.Y,
             state.Player.Rotation,
             state.Player.Size,
-            frogData);
+            frogData,
+            bulletData);
     }
 
     public async Task RenderStartScreenAsync(int canvasWidth, int canvasHeight, StartButtonBounds buttonBounds)

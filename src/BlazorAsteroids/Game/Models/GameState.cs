@@ -7,6 +7,7 @@ public class GameState : IGameState
     public Player Player { get; set; } = new();
     public Camera Camera { get; set; } = new();
     public List<Frog> Frogs { get; set; } = new();
+    public List<Bullet> Bullets { get; set; } = new();
     public FrogSpawner FrogSpawner { get; set; } = new();
 
     /// <summary>
@@ -32,12 +33,45 @@ public class GameState : IGameState
     // Explicit interface implementation to satisfy IGameState.Player (read-only)
     Player IGameState.Player => Player;
 
-    public void Update(float deltaTime, Vector2 movementDirection)
+    /// <summary>
+    /// Minimum speed multiplier when moving directly away from cursor.
+    /// </summary>
+    private const float MinBackpedalMultiplier = 0.55f;
+
+    public void Update(float deltaTime, Vector2 movementDirection, Vector2 cursorWorldPosition)
     {
         // Update player movement
         if (movementDirection.Length() > 0)
         {
-            Vector2 velocity = movementDirection * Player.Speed * deltaTime;
+            // Calculate speed multiplier based on angle between movement and cursor direction.
+            // Full speed if cursor is in the front 180° of movement.
+            // Gradually slows as cursor moves behind (toward directly opposite movement).
+            float speedMultiplier = 1f;
+
+            Vector2 toCursor = new Vector2(
+                cursorWorldPosition.X - Player.Position.X,
+                cursorWorldPosition.Y - Player.Position.Y
+            );
+
+            if (toCursor.Length() > 1f)
+            {
+                // Dot product of normalized movement and normalized cursor direction
+                Vector2 moveNorm = movementDirection.Normalized();
+                Vector2 cursorNorm = toCursor.Normalized();
+                float dot = moveNorm.X * cursorNorm.X + moveNorm.Y * cursorNorm.Y;
+
+                // dot = 1 means cursor is directly ahead (full speed)
+                // dot = 0 means cursor is perpendicular (full speed — front 180°)
+                // dot = -1 means cursor is directly behind (minimum speed)
+                if (dot < 0)
+                {
+                    // Remap dot from [-1, 0] to [MinBackpedalMultiplier, 1]
+                    // dot=0 -> multiplier=1, dot=-1 -> multiplier=MinBackpedalMultiplier
+                    speedMultiplier = 1f + dot * (1f - MinBackpedalMultiplier);
+                }
+            }
+
+            Vector2 velocity = movementDirection * (Player.Speed * speedMultiplier) * deltaTime;
             Player.Position = Player.Position + velocity;
 
             // Clamp position to world bounds
@@ -50,8 +84,8 @@ public class GameState : IGameState
             Player.Rotation = MathF.Atan2(movementDirection.Y, movementDirection.X);
         }
 
-        // Update camera to follow player
-        Camera.Follow(Player.Position);
+        // Update camera to smoothly follow midpoint between player and cursor
+        Camera.Follow(Player.Position, cursorWorldPosition, deltaTime);
 
         // Spawn frogs
         var newFrog = FrogSpawner.TrySpawn(deltaTime, Camera, Frogs.Count);
@@ -62,6 +96,48 @@ public class GameState : IGameState
         foreach (var frog in Frogs)
         {
             frog.Update(deltaTime, Player.Position);
+        }
+
+        // Update bullets
+        foreach (var bullet in Bullets)
+        {
+            bullet.Update(deltaTime);
+        }
+
+        // Check bullet-frog collisions
+        foreach (var bullet in Bullets)
+        {
+            if (!bullet.IsAlive) continue;
+
+            foreach (var frog in Frogs)
+            {
+                if (bullet.IntersectsCircle(frog.Position, frog.Size))
+                {
+                    bullet.IsAlive = false;
+                    frog.IsAlive = false;
+                    break;
+                }
+            }
+        }
+
+        // Remove dead bullets and frogs
+        Bullets.RemoveAll(b => !b.IsAlive);
+        Frogs.RemoveAll(f => !f.IsAlive);
+    }
+
+    /// <summary>
+    /// Fires a bullet from the player toward a world-space target position.
+    /// </summary>
+    public void FireBullet(Vector2 targetWorld)
+    {
+        Vector2 direction = new Vector2(
+            targetWorld.X - Player.Position.X,
+            targetWorld.Y - Player.Position.Y
+        );
+
+        if (direction.Length() > 0)
+        {
+            Bullets.Add(new Bullet(Player.Position, direction));
         }
     }
 }
