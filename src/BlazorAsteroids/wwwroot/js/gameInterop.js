@@ -87,7 +87,7 @@ export function clearCanvas(canvasElement) {
 }
 
 /**
- * Renders a full frame: background with camera offset, then player.
+ * Renders a full frame: background with camera offset, then player and frogs.
  * @param {HTMLCanvasElement} canvasElement - The canvas DOM element
  * @param {number} cameraX - Camera top-left X in world space
  * @param {number} cameraY - Camera top-left Y in world space
@@ -95,8 +95,9 @@ export function clearCanvas(canvasElement) {
  * @param {number} playerY - Player Y position in world space
  * @param {number} rotation - Player rotation in radians
  * @param {number} size - Player size for triangle dimensions
+ * @param {number[]} frogData - Flat array of frog data [x, y, rotation, size, ...]
  */
-export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size) {
+export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData) {
     const ctx = canvasElement.getContext('2d');
     const viewWidth = canvasElement.width;
     const viewHeight = canvasElement.height;
@@ -106,15 +107,9 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
 
     // Draw the background image, offset by camera position
     if (backgroundLoaded && backgroundImage) {
-        // The background image is drawn at world scale.
-        // We need to map the camera's view of the world onto the canvas.
-        // Source rect: the portion of the image the camera is looking at.
-        // The image covers the full world, so we sample proportionally.
         const imgW = backgroundImage.naturalWidth;
         const imgH = backgroundImage.naturalHeight;
 
-        // World dimensions — derived from how much of the image we show
-        // We assume the image maps 1:1 to world coordinates scaled by image/world ratio
         const worldWidth = 2000;
         const worldHeight = 1500;
 
@@ -126,28 +121,88 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
 
         ctx.drawImage(backgroundImage, sx, sy, sw, sh, 0, 0, viewWidth, viewHeight);
     } else {
-        // Fallback: dark background if image not loaded yet
         ctx.fillStyle = '#1a1a2e';
         ctx.fillRect(0, 0, viewWidth, viewHeight);
     }
 
-    // Convert player world position to screen position
+    // Draw frogs
+    if (frogData && frogData.length > 0) {
+        for (let i = 0; i < frogData.length; i += 4) {
+            const frogX = frogData[i] - cameraX;
+            const frogY = frogData[i + 1] - cameraY;
+            const frogRotation = frogData[i + 2];
+            const frogSize = frogData[i + 3];
+
+            // Only draw if on screen (with margin)
+            if (frogX < -frogSize * 2 || frogX > viewWidth + frogSize * 2 ||
+                frogY < -frogSize * 2 || frogY > viewHeight + frogSize * 2) {
+                continue;
+            }
+
+            drawFrog(ctx, frogX, frogY, frogRotation, frogSize);
+        }
+    }
+
+    // Draw the player
     const screenX = playerX - cameraX;
     const screenY = playerY - cameraY;
 
-    // Draw the player
     ctx.save();
     ctx.translate(screenX, screenY);
     ctx.rotate(rotation);
 
-    // Draw triangle ship: nose pointing right (+X direction)
     ctx.beginPath();
-    ctx.moveTo(size, 0);                    // Nose
-    ctx.lineTo(-size * 0.7, -size * 0.6);   // Top-left wing
-    ctx.lineTo(-size * 0.7, size * 0.6);    // Bottom-left wing
+    ctx.moveTo(size, 0);
+    ctx.lineTo(-size * 0.7, -size * 0.6);
+    ctx.lineTo(-size * 0.7, size * 0.6);
     ctx.closePath();
 
     ctx.fillStyle = 'cyan';
+    ctx.fill();
+
+    ctx.restore();
+}
+
+/**
+ * Draws a frog as a green blob with eyes, facing its rotation direction.
+ */
+function drawFrog(ctx, x, y, rotation, size) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+
+    // Body - oval shape
+    ctx.beginPath();
+    ctx.ellipse(0, 0, size, size * 0.7, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#2d8a2d';
+    ctx.fill();
+    ctx.strokeStyle = '#1a5c1a';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Eyes - two circles at the front
+    const eyeOffset = size * 0.5;
+    const eyeSpread = size * 0.4;
+    const eyeRadius = size * 0.25;
+
+    // Left eye
+    ctx.beginPath();
+    ctx.arc(eyeOffset, -eyeSpread, eyeRadius, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffcc';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(eyeOffset + eyeRadius * 0.3, -eyeSpread, eyeRadius * 0.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#111';
+    ctx.fill();
+
+    // Right eye
+    ctx.beginPath();
+    ctx.arc(eyeOffset, eyeSpread, eyeRadius, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffcc';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(eyeOffset + eyeRadius * 0.3, eyeSpread, eyeRadius * 0.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#111';
     ctx.fill();
 
     ctx.restore();

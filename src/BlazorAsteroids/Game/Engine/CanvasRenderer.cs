@@ -35,6 +35,17 @@ public class CanvasRenderer : IRenderer
     {
         if (_module is null) return;
 
+        // Build frog data as flat array: [x, y, rotation, size, x, y, rotation, size, ...]
+        var frogData = new float[state.Frogs.Count * 4];
+        for (int i = 0; i < state.Frogs.Count; i++)
+        {
+            var frog = state.Frogs[i];
+            frogData[i * 4] = frog.Position.X;
+            frogData[i * 4 + 1] = frog.Position.Y;
+            frogData[i * 4 + 2] = frog.Rotation;
+            frogData[i * 4 + 3] = frog.Size;
+        }
+
         await _module.InvokeVoidAsync("renderFrame",
             _canvas,
             state.Camera.Position.X,
@@ -42,6 +53,7 @@ public class CanvasRenderer : IRenderer
             state.Player.Position.X,
             state.Player.Position.Y,
             state.Player.Rotation,
-            state.Player.Size);
+            state.Player.Size,
+            frogData);
     }
 }
