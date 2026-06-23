@@ -12,10 +12,17 @@
     </div>
 }
 
-<canvas @ref="canvasRef" width="800" height="600" tabindex="0"
-        style="background-color: black; display: block;"></canvas>
+<canvas @ref="canvasRef" width="@ViewportWidth" height="@ViewportHeight" tabindex="0"
+        style="display: block;"></canvas>
 
 @code {
+    private const int ViewportWidth = 800;
+    private const int ViewportHeight = 600;
+
+    // World is ~6x the viewport area so the camera shows ~1/6 of the map
+    private const float WorldWidth = 2000f;
+    private const float WorldHeight = 1500f;
+
     private ElementReference canvasRef;
     private GameLoop? gameLoop;
     private string? errorMessage;
@@ -36,18 +43,33 @@
 
             var inputManager = new InputManager();
             var renderer = new CanvasRenderer(JSRuntime);
+
+            var camera = new Camera
+            {
+                ViewportWidth = ViewportWidth,
+                ViewportHeight = ViewportHeight,
+                WorldWidth = WorldWidth,
+                WorldHeight = WorldHeight
+            };
+
             var gameState = new GameState
             {
-                CanvasWidth = 800,
-                CanvasHeight = 600,
+                CanvasWidth = ViewportWidth,
+                CanvasHeight = ViewportHeight,
+                WorldWidth = WorldWidth,
+                WorldHeight = WorldHeight,
+                Camera = camera,
                 Player = new Player
                 {
-                    Position = new Vector2(400, 300),
+                    Position = new Vector2(WorldWidth / 2f, WorldHeight / 2f),
                     Speed = 200f,
                     Size = 15f,
                     Rotation = 0f
                 }
             };
+
+            // Position camera on player immediately so it's visible on first frame
+            camera.Follow(gameState.Player.Position);
 
             gameLoop = new GameLoop(JSRuntime, inputManager, gameState, renderer);
             await gameLoop.InitializeAsync(canvasRef);

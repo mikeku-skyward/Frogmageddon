@@ -33,17 +33,28 @@ public class CanvasRenderer : IRenderer
 
     public async Task RenderAsync(GameState state)
     {
-        await ClearAsync();
+        if (_module is null) return;
 
-        if (_module is not null)
+        // Build frog data as flat array: [x, y, rotation, size, x, y, rotation, size, ...]
+        var frogData = new float[state.Frogs.Count * 4];
+        for (int i = 0; i < state.Frogs.Count; i++)
         {
-            await _module.InvokeVoidAsync("drawPlayer",
-                _canvas,
-                state.Player.Position.X,
-                state.Player.Position.Y,
-                state.Player.Rotation,
-                state.Player.Size);
+            var frog = state.Frogs[i];
+            frogData[i * 4] = frog.Position.X;
+            frogData[i * 4 + 1] = frog.Position.Y;
+            frogData[i * 4 + 2] = frog.Rotation;
+            frogData[i * 4 + 3] = frog.Size;
         }
+
+        await _module.InvokeVoidAsync("renderFrame",
+            _canvas,
+            state.Camera.Position.X,
+            state.Camera.Position.Y,
+            state.Player.Position.X,
+            state.Player.Position.Y,
+            state.Player.Rotation,
+            state.Player.Size,
+            frogData);
     }
 
     public async Task RenderStartScreenAsync(int canvasWidth, int canvasHeight, StartButtonBounds buttonBounds)
