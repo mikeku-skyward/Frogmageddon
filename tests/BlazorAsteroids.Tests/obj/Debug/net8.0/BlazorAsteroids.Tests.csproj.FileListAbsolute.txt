@@ -150,3 +150,6 @@ C:\Users\mikeku\Documents\GitHub\Frogmageddon\tests\BlazorAsteroids.Tests\obj\De
 C:\Users\mikeku\Documents\GitHub\Frogmageddon\tests\BlazorAsteroids.Tests\obj\Debug\net8.0\BlazorAsteroids.Tests.pdb
 C:\Users\mikeku\Documents\GitHub\Frogmageddon\tests\BlazorAsteroids.Tests\obj\Debug\net8.0\BlazorAsteroids.Tests.genruntimeconfig.cache
 C:\Users\mikeku\Documents\GitHub\Frogmageddon\tests\BlazorAsteroids.Tests\obj\Debug\net8.0\ref\BlazorAsteroids.Tests.dll
+C:\Users\heidiy\Documents\GitHub\Frogmageddon\tests\BlazorAsteroids.Tests\obj\Debug\net8.0\BlazorAsteroids.Tests.dll
+C:\Users\heidiy\Documents\GitHub\Frogmageddon\tests\BlazorAsteroids.Tests\obj\Debug\net8.0\refint\BlazorAsteroids.Tests.dll
+C:\Users\heidiy\Documents\GitHub\Frogmageddon\tests\BlazorAsteroids.Tests\obj\Debug\net8.0\BlazorAsteroids.Tests.pdb

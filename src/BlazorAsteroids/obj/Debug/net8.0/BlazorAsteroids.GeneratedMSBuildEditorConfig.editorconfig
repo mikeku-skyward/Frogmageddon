@@ -4,54 +4,57 @@ build_property.EnableSingleFileAnalyzer =
 build_property.EnableTrimAnalyzer = false
 build_property.IncludeAllContentForSelfExtract = 
 build_property.TargetFramework = net8.0
+build_property.TargetFrameworkIdentifier = .NETCoreApp
+build_property.TargetFrameworkVersion = v8.0
 build_property.TargetPlatformMinVersion = 
 build_property.UsingMicrosoftNETSdkWeb = 
 build_property.ProjectTypeGuids = 
 build_property.InvariantGlobalization = false
 build_property.PlatformNeutralAssembly = 
 build_property.EnforceExtendedAnalyzerRules = 
+build_property.EntryPointFilePath = 
 build_property._SupportedPlatformList = browser
 build_property.RootNamespace = BlazorAsteroids
 build_property.RootNamespace = BlazorAsteroids
-build_property.ProjectDir = C:\Users\mikeku\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\
+build_property.ProjectDir = C:\Users\heidiy\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = false
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = C:\Users\mikeku\Documents\GitHub\Frogmageddon\src\BlazorAsteroids
+build_property.MSBuildProjectDirectory = C:\Users\heidiy\Documents\GitHub\Frogmageddon\src\BlazorAsteroids
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
-[C:/Users/mikeku/Documents/GitHub/Frogmageddon/src/BlazorAsteroids/App.razor]
+[C:/Users/heidiy/Documents/GitHub/Frogmageddon/src/BlazorAsteroids/App.razor]
 build_metadata.AdditionalFiles.TargetPath = QXBwLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/mikeku/Documents/GitHub/Frogmageddon/src/BlazorAsteroids/Pages/Counter.razor]
+[C:/Users/heidiy/Documents/GitHub/Frogmageddon/src/BlazorAsteroids/Pages/Counter.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ291bnRlci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/mikeku/Documents/GitHub/Frogmageddon/src/BlazorAsteroids/Pages/GamePage.razor]
+[C:/Users/heidiy/Documents/GitHub/Frogmageddon/src/BlazorAsteroids/Pages/GamePage.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcR2FtZVBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/mikeku/Documents/GitHub/Frogmageddon/src/BlazorAsteroids/Pages/Home.razor]
+[C:/Users/heidiy/Documents/GitHub/Frogmageddon/src/BlazorAsteroids/Pages/Home.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSG9tZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/mikeku/Documents/GitHub/Frogmageddon/src/BlazorAsteroids/Pages/Weather.razor]
+[C:/Users/heidiy/Documents/GitHub/Frogmageddon/src/BlazorAsteroids/Pages/Weather.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcV2VhdGhlci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/mikeku/Documents/GitHub/Frogmageddon/src/BlazorAsteroids/_Imports.razor]
+[C:/Users/heidiy/Documents/GitHub/Frogmageddon/src/BlazorAsteroids/_Imports.razor]
 build_metadata.AdditionalFiles.TargetPath = X0ltcG9ydHMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/mikeku/Documents/GitHub/Frogmageddon/src/BlazorAsteroids/Layout/MainLayout.razor]
+[C:/Users/heidiy/Documents/GitHub/Frogmageddon/src/BlazorAsteroids/Layout/MainLayout.razor]
 build_metadata.AdditionalFiles.TargetPath = TGF5b3V0XE1haW5MYXlvdXQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-s70tcwy2o6
 
-[C:/Users/mikeku/Documents/GitHub/Frogmageddon/src/BlazorAsteroids/Layout/NavMenu.razor]
+[C:/Users/heidiy/Documents/GitHub/Frogmageddon/src/BlazorAsteroids/Layout/NavMenu.razor]
 build_metadata.AdditionalFiles.TargetPath = TGF5b3V0XE5hdk1lbnUucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-9xir00z2ub

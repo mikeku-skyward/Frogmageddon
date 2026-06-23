@@ -1035,3 +1035,14 @@ C:\Users\mikeku\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\obj\Debug\net8
 C:\Users\mikeku\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\obj\Debug\net8.0\compressed\3w0zn2posz-oliisppdyw.gz
 C:\Users\mikeku\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\obj\Debug\net8.0\compressed\qh1y0y7lzw-s8wnt1nlz2.gz
 C:\Users\mikeku\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\obj\Debug\net8.0\compressed\p6m5o2eeer-o5mlk30o18.gz
+C:\Users\heidiy\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\obj\Debug\net8.0\BlazorAsteroids.csproj.AssemblyReference.cache
+C:\Users\heidiy\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\obj\Debug\net8.0\rpswa.dswa.cache.json
+C:\Users\heidiy\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\obj\Debug\net8.0\BlazorAsteroids.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\heidiy\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\obj\Debug\net8.0\BlazorAsteroids.AssemblyInfoInputs.cache
+C:\Users\heidiy\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\obj\Debug\net8.0\BlazorAsteroids.AssemblyInfo.cs
+C:\Users\heidiy\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\obj\Debug\net8.0\BlazorAsteroids.csproj.CoreCompileInputs.cache
+C:\Users\heidiy\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\obj\Debug\net8.0\BlazorAsteroids.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\heidiy\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\obj\Debug\net8.0\BlazorAsteroids.sourcelink.json
+C:\Users\heidiy\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\obj\Debug\net8.0\BlazorAsteroids.dll
+C:\Users\heidiy\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\obj\Debug\net8.0\refint\BlazorAsteroids.dll
+C:\Users\heidiy\Documents\GitHub\Frogmageddon\src\BlazorAsteroids\obj\Debug\net8.0\BlazorAsteroids.pdb

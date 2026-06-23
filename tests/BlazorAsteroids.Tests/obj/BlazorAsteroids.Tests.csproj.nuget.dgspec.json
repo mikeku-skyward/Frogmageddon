@@ -1,37 +1,36 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\mikeku\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj": {}
+    "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj": {}
   },
   "projects": {
-    "C:\\Users\\mikeku\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj": {
+    "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\mikeku\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj",
+        "projectUniqueName": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj",
         "projectName": "BlazorAsteroids",
-        "projectPath": "C:\\Users\\mikeku\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj",
-        "packagesPath": "C:\\Users\\mikeku\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\mikeku\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\obj\\",
+        "projectPath": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj",
+        "packagesPath": "C:\\Users\\heidiy\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\mikeku\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\NuGet.Config",
+          "C:\\Users\\heidiy\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
-          "net8.0"
+          "net9.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "https://api.nuget.org/v3/index.json": {},
-          "https://qdevweb.skyward.com/nuget/nuget": {}
+          "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net8.0": {
-            "targetAlias": "net8.0",
+          "net9.0": {
+            "targetAlias": "net9.0",
             "projectReferences": {}
           }
         },
@@ -48,22 +47,22 @@
         "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
-        "net8.0": {
-          "targetAlias": "net8.0",
+        "net9.0": {
+          "targetAlias": "net9.0",
           "dependencies": {
             "Microsoft.AspNetCore.Components.WebAssembly": {
               "target": "Package",
-              "version": "[8.0.28, )"
+              "version": "[9.0.*, )"
             },
             "Microsoft.AspNetCore.Components.WebAssembly.DevServer": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[8.0.28, )"
+              "version": "[9.0.*, )"
             },
             "Microsoft.NET.ILLink.Tasks": {
               "suppressParent": "All",
               "target": "Package",
-              "version": "[8.0.28, )",
+              "version": "[9.0.17, )",
               "autoReferenced": true
             },
             "Microsoft.NET.Sdk.WebAssembly.Pack": {
@@ -87,7 +86,7 @@
           "downloadDependencies": [
             {
               "name": "Microsoft.NETCore.App.Runtime.Mono.browser-wasm",
-              "version": "[8.0.28, 8.0.28]"
+              "version": "[9.0.17, 9.0.17]"
             }
           ],
           "frameworkReferences": {
@@ -104,37 +103,36 @@
         }
       }
     },
-    "C:\\Users\\mikeku\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj": {
+    "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\mikeku\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj",
+        "projectUniqueName": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj",
         "projectName": "BlazorAsteroids.Tests",
-        "projectPath": "C:\\Users\\mikeku\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj",
-        "packagesPath": "C:\\Users\\mikeku\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\mikeku\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\obj\\",
+        "projectPath": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj",
+        "packagesPath": "C:\\Users\\heidiy\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\mikeku\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\NuGet.Config",
+          "C:\\Users\\heidiy\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
-          "net8.0"
+          "net9.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "https://api.nuget.org/v3/index.json": {},
-          "https://qdevweb.skyward.com/nuget/nuget": {}
+          "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net8.0": {
-            "targetAlias": "net8.0",
+          "net9.0": {
+            "targetAlias": "net9.0",
             "projectReferences": {
-              "C:\\Users\\mikeku\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj": {
-                "projectPath": "C:\\Users\\mikeku\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj"
+              "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj": {
+                "projectPath": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj"
               }
             }
           }
@@ -152,8 +150,8 @@
         "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
-        "net8.0": {
-          "targetAlias": "net8.0",
+        "net9.0": {
+          "targetAlias": "net9.0",
           "dependencies": {
             "FsCheck.Xunit": {
               "target": "Package",
