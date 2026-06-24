@@ -40,6 +40,18 @@ public class GameState : IGameState
 
     public void Update(float deltaTime, Vector2 movementDirection, Vector2 cursorWorldPosition)
     {
+        // Tick down the damage flash timer
+        if (Player.DamageFlashTimer > 0f)
+        {
+            Player.DamageFlashTimer = MathF.Max(0f, Player.DamageFlashTimer - deltaTime);
+        }
+
+        // Tick down the invincibility timer
+        if (Player.InvincibilityTimer > 0f)
+        {
+            Player.InvincibilityTimer = MathF.Max(0f, Player.InvincibilityTimer - deltaTime);
+        }
+
         // Update player movement
         if (movementDirection.Length() > 0)
         {
@@ -117,6 +129,29 @@ public class GameState : IGameState
                     frog.IsAlive = false;
                     Player.Score += 25;
                     break;
+                }
+            }
+        }
+
+        // Check frog-player collisions (skip if player is invincible)
+        if (!Player.IsInvincible)
+        {
+            foreach (var frog in Frogs)
+            {
+                if (!frog.IsAlive) continue;
+
+                float dx = frog.Position.X - Player.Position.X;
+                float dy = frog.Position.Y - Player.Position.Y;
+                float distSq = dx * dx + dy * dy;
+                float combinedRadius = frog.Size + Player.Size;
+
+                if (distSq <= combinedRadius * combinedRadius)
+                {
+                    frog.IsAlive = false;
+                    Player.Health -= 25;
+                    Player.DamageFlashTimer = 1f;
+                    Player.InvincibilityTimer = 1.5f;
+                    break; // Only take one hit per frame
                 }
             }
         }

@@ -65,7 +65,8 @@ public class CanvasRenderer : IRenderer
             state.Player.Rotation,
             state.Player.Size,
             frogData,
-            bulletData);
+            bulletData,
+            state.Player.IsFlashing);
     }
 
     public async Task RenderStartScreenAsync(int canvasWidth, int canvasHeight, StartButtonBounds buttonBounds)

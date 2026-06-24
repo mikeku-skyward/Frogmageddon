@@ -114,7 +114,7 @@ export function clearCanvas(canvasElement) {
  * @param {number[]} frogData - Flat array of frog data [x, y, rotation, size, ...]
  * @param {number[]} bulletData - Flat array of bullet data [x, y, radius, ...]
  */
-export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData, bulletData) {
+export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData, bulletData, isFlashing) {
     const ctx = canvasElement.getContext('2d');
     const viewWidth = canvasElement.width;
     const viewHeight = canvasElement.height;
@@ -193,7 +193,7 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
     ctx.lineTo(-size * 0.7, size * 0.6);
     ctx.closePath();
 
-    ctx.fillStyle = 'cyan';
+    ctx.fillStyle = isFlashing ? 'red' : 'cyan';
     ctx.fill();
 
     ctx.restore();
