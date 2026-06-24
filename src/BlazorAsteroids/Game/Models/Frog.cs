@@ -1,6 +1,6 @@
 namespace BlazorAsteroids.Game.Models;
 
-public class Frog
+public class Frog : IPoolable
 {
     private enum FrogState
     {
@@ -39,11 +39,38 @@ public class Frog
     /// </summary>
     public bool IsHopping => _state == FrogState.Hopping;
 
+    /// <summary>
+    /// Parameterless constructor for object pool usage. Creates an uninitialized instance.
+    /// </summary>
+    public Frog()
+    {
+    }
+
     public Frog(Vector2 spawnPosition)
     {
+        Initialize(spawnPosition, 0f);
+    }
+
+    /// <summary>
+    /// Initializes or reinitializes the frog with the given spawn parameters.
+    /// Used by the object pool to reuse instances.
+    /// </summary>
+    public void Initialize(Vector2 spawnPosition, float rotation)
+    {
         Position = spawnPosition;
+        Rotation = rotation;
+        IsAlive = true;
+        _state = FrogState.Sitting;
         _stateTimer = RandomSitDuration();
         _hopDirection = new Vector2(0, 0);
+    }
+
+    /// <summary>
+    /// Resets the frog for return to the object pool.
+    /// </summary>
+    public void Reset()
+    {
+        IsAlive = false;
     }
 
     public void Update(float deltaTime, Vector2 playerPosition)

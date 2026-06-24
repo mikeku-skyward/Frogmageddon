@@ -1,6 +1,6 @@
 namespace BlazorAsteroids.Game.Models;
 
-public class Bullet
+public class Bullet : IPoolable
 {
     /// <summary>
     /// Bullet speed in world units per second.
@@ -14,17 +14,43 @@ public class Bullet
 
     public Vector2 Position { get; set; }
     public Vector2 PreviousPosition { get; set; }
-    public Vector2 Direction { get; private set; }
+    public Vector2 Direction { get; set; }
     public float Radius { get; set; } = 5f;
-    public float Lifetime { get; private set; }
+    public float Lifetime { get; set; }
     public bool IsAlive { get; set; } = true;
 
+    /// <summary>
+    /// Parameterless constructor for object pool usage.
+    /// Creates an uninitialized instance.
+    /// </summary>
+    public Bullet()
+    {
+    }
+
     public Bullet(Vector2 startPosition, Vector2 direction)
+    {
+        Initialize(startPosition, direction);
+    }
+
+    /// <summary>
+    /// Initializes or reinitializes the bullet with the given parameters.
+    /// Used by the object pool to reuse bullet instances.
+    /// </summary>
+    public void Initialize(Vector2 startPosition, Vector2 direction)
     {
         Position = startPosition;
         PreviousPosition = startPosition;
         Direction = direction.Normalized();
         Lifetime = 0f;
+        IsAlive = true;
+    }
+
+    /// <summary>
+    /// Resets the bullet for return to the object pool.
+    /// </summary>
+    public void Reset()
+    {
+        IsAlive = false;
     }
 
     public void Update(float deltaTime)

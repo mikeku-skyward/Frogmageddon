@@ -8,6 +8,8 @@ namespace BlazorAsteroids.Game.Engine;
 public class CanvasRenderer : IRenderer
 {
     private readonly IJSRuntime _jsRuntime;
+    private readonly RenderBuffer _frogBuffer = new(50 * 5);   // initial capacity for 50 frogs
+    private readonly RenderBuffer _bulletBuffer = new(20 * 3); // initial capacity for 20 bullets
     private IJSObjectReference? _module;
     private ElementReference _canvas;
 
@@ -36,7 +38,8 @@ public class CanvasRenderer : IRenderer
         if (_module is null) return;
 
         // Build frog data as flat array: [x, y, rotation, size, isHopping, ...]
-        var frogData = new float[state.Frogs.Count * 5];
+        _frogBuffer.EnsureCapacity(state.Frogs.Count * 5);
+        var frogData = _frogBuffer.Data;
         for (int i = 0; i < state.Frogs.Count; i++)
         {
             var frog = state.Frogs[i];
@@ -48,7 +51,8 @@ public class CanvasRenderer : IRenderer
         }
 
         // Build bullet data as flat array: [x, y, radius, ...]
-        var bulletData = new float[state.Bullets.Count * 3];
+        _bulletBuffer.EnsureCapacity(state.Bullets.Count * 3);
+        var bulletData = _bulletBuffer.Data;
         for (int i = 0; i < state.Bullets.Count; i++)
         {
             var bullet = state.Bullets[i];
@@ -81,7 +85,9 @@ public class CanvasRenderer : IRenderer
             state.Player.Size,
             Math.Clamp(state.StaminaSystem.Stamina, 0f, 1f),
             state.PlayerAnimation.CurrentSpriteIndex,
-            (int)state.PlayerAnimation.Facing);
+            (int)state.PlayerAnimation.Facing,
+            state.Frogs.Count,
+            state.Bullets.Count);
     }
 
     public async Task RenderStartScreenAsync(int canvasWidth, int canvasHeight, StartButtonBounds buttonBounds)

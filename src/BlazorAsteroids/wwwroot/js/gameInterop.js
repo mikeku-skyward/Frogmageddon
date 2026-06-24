@@ -2,6 +2,9 @@ let animationFrameId = null;
 let isContextLost = false;
 let backgroundImage = null;
 let backgroundLoaded = false;
+let _cachedRect = null;
+let _offscreenCanvas = null;
+let _offscreenCtx = null;
 
 // Preload the background image
 (function loadBackground() {
@@ -113,6 +116,12 @@ export function initializeGame(canvasElement, dotNetRef) {
             throw new Error('Failed to acquire 2D canvas context.');
         }
 
+        // Create cached offscreen canvas for damage flash compositing
+        _offscreenCanvas = document.createElement('canvas');
+        _offscreenCanvas.width = 128;
+        _offscreenCanvas.height = 128;
+        _offscreenCtx = _offscreenCanvas.getContext('2d');
+
         let lastTimestamp = 0;
 
         // Handle canvas context loss: pause the rendering loop
@@ -131,6 +140,14 @@ export function initializeGame(canvasElement, dotNetRef) {
             }
         });
 
+        // Cache bounding rect for mouse coordinate calculations
+        _cachedRect = canvasElement.getBoundingClientRect();
+
+        // Invalidate and recompute on window resize
+        window.addEventListener('resize', () => {
+            _cachedRect = canvasElement.getBoundingClientRect();
+        });
+
         // Keyboard handling – convert key to lowercase before sending to C#
         document.addEventListener('keydown', (e) => {
             dotNetRef.invokeMethodAsync('SetKeyDown', e.key.toLowerCase());
@@ -142,7 +159,7 @@ export function initializeGame(canvasElement, dotNetRef) {
 
         // Mouse click handling – compute coordinates relative to canvas
         canvasElement.addEventListener('click', (e) => {
-            const rect = canvasElement.getBoundingClientRect();
+            const rect = _cachedRect || canvasElement.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             dotNetRef.invokeMethodAsync('OnMouseClick', x, y);
@@ -150,7 +167,7 @@ export function initializeGame(canvasElement, dotNetRef) {
 
         // Mouse move handling – track cursor position relative to canvas
         canvasElement.addEventListener('mousemove', (e) => {
-            const rect = canvasElement.getBoundingClientRect();
+            const rect = _cachedRect || canvasElement.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             dotNetRef.invokeMethodAsync('OnMouseMove', x, y);
@@ -213,8 +230,10 @@ export function clearCanvas(canvasElement) {
  * @param {number} staminaRatio - Current stamina ratio (0.0 to 1.0) for the HUD bar
  * @param {number} animationFrameIndex - Current sprite index (0=stationary, 1=walk1, 2=walk2)
  * @param {number} facingDirection - Facing direction (0=right, 1=left)
+ * @param {number|null} frogCount - Number of active frogs (used to limit frogData reading); null means use full array
+ * @param {number|null} bulletCount - Number of active bullets (used to limit bulletData reading); null means use full array
  */
-export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData, bulletData, isFlashing, currentAmmo, maxAmmo, isReloading, reloadProgress, playerScreenX, playerScreenY, playerSize, staminaRatio, animationFrameIndex, facingDirection) {
+export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData, bulletData, isFlashing, currentAmmo, maxAmmo, isReloading, reloadProgress, playerScreenX, playerScreenY, playerSize, staminaRatio, animationFrameIndex, facingDirection, frogCount, bulletCount) {
     const ctx = canvasElement.getContext('2d');
     const viewWidth = canvasElement.width;
     const viewHeight = canvasElement.height;
@@ -243,8 +262,9 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
     }
 
     // Draw frogs
-    if (frogData && frogData.length > 0) {
-        for (let i = 0; i < frogData.length; i += 5) {
+    const frogDataLength = frogCount != null ? frogCount * 5 : (frogData ? frogData.length : 0);
+    if (frogData && frogDataLength > 0) {
+        for (let i = 0; i < frogDataLength; i += 5) {
             const frogX = frogData[i] - cameraX;
             const frogY = frogData[i + 1] - cameraY;
             const frogRotation = frogData[i + 2];
@@ -282,9 +302,10 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
     }
 
     // Draw bullets
-    if (bulletData && bulletData.length > 0) {
+    const bulletDataLength = bulletCount != null ? bulletCount * 3 : (bulletData ? bulletData.length : 0);
+    if (bulletData && bulletDataLength > 0) {
         ctx.fillStyle = '#ffff00';
-        for (let i = 0; i < bulletData.length; i += 3) {
+        for (let i = 0; i < bulletDataLength; i += 3) {
             const bx = bulletData[i] - cameraX;
             const by = bulletData[i + 1] - cameraY;
             const br = bulletData[i + 2];
@@ -459,13 +480,20 @@ function drawPlayerSprite(ctx, x, y, size, spriteIndex, facingLeft, isFlashing) 
     const drawY = y - scaledHeight / 2;
 
     if (isFlashing) {
-        // Use an offscreen canvas to draw sprite + red overlay with source-atop compositing
-        const offscreen = document.createElement('canvas');
-        offscreen.width = Math.ceil(scaledWidth);
-        offscreen.height = Math.ceil(scaledHeight);
-        const offCtx = offscreen.getContext('2d');
+        // Use the cached offscreen canvas to draw sprite + red overlay with source-atop compositing
+        const reqW = Math.ceil(scaledWidth);
+        const reqH = Math.ceil(scaledHeight);
+        // Resize cached offscreen canvas only when dimensions are insufficient
+        if (_offscreenCanvas.width < reqW || _offscreenCanvas.height < reqH) {
+            _offscreenCanvas.width = Math.max(_offscreenCanvas.width, reqW);
+            _offscreenCanvas.height = Math.max(_offscreenCanvas.height, reqH);
+        }
+        const offCtx = _offscreenCtx;
+        // Clear the reusable canvas before drawing
+        offCtx.clearRect(0, 0, _offscreenCanvas.width, _offscreenCanvas.height);
 
         // Draw the sprite onto the offscreen canvas
+        offCtx.globalCompositeOperation = 'source-over';
         offCtx.drawImage(img, 0, 0, scaledWidth, scaledHeight);
 
         // Apply red overlay only on top of the sprite pixels
@@ -479,10 +507,10 @@ function drawPlayerSprite(ctx, x, y, size, spriteIndex, facingLeft, isFlashing) 
             ctx.translate(x, y);
             ctx.scale(-1, 1);
             ctx.translate(-x, -y);
-            ctx.drawImage(offscreen, drawX, drawY);
+            ctx.drawImage(_offscreenCanvas, 0, 0, scaledWidth, scaledHeight, drawX, drawY, scaledWidth, scaledHeight);
             ctx.restore();
         } else {
-            ctx.drawImage(offscreen, drawX, drawY);
+            ctx.drawImage(_offscreenCanvas, 0, 0, scaledWidth, scaledHeight, drawX, drawY, scaledWidth, scaledHeight);
         }
     } else {
         // No flashing — draw directly with optional mirroring

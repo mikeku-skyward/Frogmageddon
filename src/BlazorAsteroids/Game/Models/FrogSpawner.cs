@@ -109,11 +109,16 @@ public class FrogSpawner
     }
 
     /// <summary>
+    /// Shared empty list returned on no-spawn frames to avoid per-frame allocations.
+    /// </summary>
+    private static readonly IReadOnlyList<Frog> EmptyFrogList = Array.Empty<Frog>();
+
+    /// <summary>
     /// Checks if it's time to spawn a group of frogs and returns spawn positions
     /// just outside the camera viewport on a single edge away from the player,
-    /// clustered around an anchor point. Returns an empty list if spawning is suppressed.
+    /// clustered around an anchor point. Returns a shared empty list if spawning is suppressed.
     /// </summary>
-    public List<Frog> TrySpawn(float deltaTime, Camera camera, int currentFrogCount, Vector2 playerPosition)
+    public IReadOnlyList<Frog> TrySpawn(float deltaTime, Camera camera, int currentFrogCount, Vector2 playerPosition, ObjectPool<Frog> frogPool)
     {
         _elapsedTime += deltaTime;
 
@@ -121,12 +126,12 @@ public class FrogSpawner
         if (currentFrogCount >= MaxFrogs)
         {
             _spawnTimer = BaseSpawnInterval / GetSpawnRateMultiplier();
-            return new List<Frog>();
+            return EmptyFrogList;
         }
 
         _spawnTimer -= deltaTime;
         if (_spawnTimer > 0)
-            return new List<Frog>();
+            return EmptyFrogList;
 
         // Reset timer for next spawn event
         _spawnTimer = BaseSpawnInterval / GetSpawnRateMultiplier();
@@ -230,9 +235,8 @@ public class FrogSpawner
                     break;
             }
 
-            var frog = new Frog(new Vector2(x, y));
-            // Randomize initial rotation (0 to 2π)
-            frog.Rotation = (float)_random.NextDouble() * MathF.PI * 2f;
+            var frog = frogPool.Acquire();
+            frog.Initialize(new Vector2(x, y), (float)_random.NextDouble() * MathF.PI * 2f);
             frogs.Add(frog);
         }
 

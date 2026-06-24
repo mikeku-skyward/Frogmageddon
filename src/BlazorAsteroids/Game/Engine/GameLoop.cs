@@ -18,6 +18,7 @@ public class GameLoop : IGameLoop, IDisposable
     private DotNetObjectReference<GameLoop>? _dotNetRef;
     private bool _isRunning;
     private GamePhase _currentPhase = GamePhase.StartScreen;
+    private GamePhase? _lastRenderedPhase;
     private StartButtonBounds _buttonBounds = null!;
     private StartButtonBounds _restartButtonBounds = null!;
     private int _highScore;
@@ -64,6 +65,7 @@ public class GameLoop : IGameLoop, IDisposable
 
         // Render start screen immediately
         await _renderer.RenderStartScreenAsync(_gameState.CanvasWidth, _gameState.CanvasHeight, _buttonBounds);
+        _lastRenderedPhase = GamePhase.StartScreen;
     }
 
     [JSInvokable]
@@ -85,20 +87,32 @@ public class GameLoop : IGameLoop, IDisposable
         if (_currentPhase == GamePhase.StartScreen)
         {
             HandleStartScreenInput();
-            _ = _renderer.RenderStartScreenAsync(_gameState.CanvasWidth, _gameState.CanvasHeight, _buttonBounds);
+            if (_lastRenderedPhase != _currentPhase)
+            {
+                _ = _renderer.RenderStartScreenAsync(_gameState.CanvasWidth, _gameState.CanvasHeight, _buttonBounds);
+                _lastRenderedPhase = _currentPhase;
+            }
         }
         else if (_currentPhase == GamePhase.GameOver)
         {
             HandleGameOverInput();
-            _ = _renderer.RenderGameOverAsync(_gameState.CanvasWidth, _gameState.CanvasHeight,
-                _buttonBounds.X, _buttonBounds.Y, _buttonBounds.Width, _buttonBounds.Height);
+            if (_lastRenderedPhase != _currentPhase)
+            {
+                _ = _renderer.RenderGameOverAsync(_gameState.CanvasWidth, _gameState.CanvasHeight,
+                    _buttonBounds.X, _buttonBounds.Y, _buttonBounds.Width, _buttonBounds.Height);
+                _lastRenderedPhase = _currentPhase;
+            }
         }
         else if (_currentPhase == GamePhase.Paused)
         {
             HandlePausedInput();
-            _ = _renderer.RenderPausedAsync(_gameState.CanvasWidth, _gameState.CanvasHeight,
-                _buttonBounds.X, _buttonBounds.Y, _buttonBounds.Width, _buttonBounds.Height,
-                _restartButtonBounds.Y);
+            if (_lastRenderedPhase != _currentPhase)
+            {
+                _ = _renderer.RenderPausedAsync(_gameState.CanvasWidth, _gameState.CanvasHeight,
+                    _buttonBounds.X, _buttonBounds.Y, _buttonBounds.Width, _buttonBounds.Height,
+                    _restartButtonBounds.Y);
+                _lastRenderedPhase = _currentPhase;
+            }
         }
         else
         {
@@ -175,6 +189,7 @@ public class GameLoop : IGameLoop, IDisposable
     private void TransitionToPlaying()
     {
         _currentPhase = GamePhase.Playing;
+        _lastRenderedPhase = null;
         _gameState.Player.Position = new Vector2(
             _gameState.CanvasWidth / 2f,
             _gameState.CanvasHeight / 2f);
@@ -204,6 +219,7 @@ public class GameLoop : IGameLoop, IDisposable
         if (_inputManager.ConsumeKeyPress("escape"))
         {
             _currentPhase = GamePhase.Playing;
+            _lastRenderedPhase = null;
             return;
         }
 
@@ -214,6 +230,7 @@ public class GameLoop : IGameLoop, IDisposable
             if (_buttonBounds.Contains(click.Value.X, click.Value.Y))
             {
                 _currentPhase = GamePhase.Playing;
+                _lastRenderedPhase = null;
             }
             else if (_restartButtonBounds.Contains(click.Value.X, click.Value.Y))
             {
@@ -231,12 +248,26 @@ public class GameLoop : IGameLoop, IDisposable
         _gameState.Player.Position = new Vector2(
             _gameState.WorldWidth / 2f,
             _gameState.WorldHeight / 2f);
+
+        // Return all entities to pools before clearing
+        foreach (var bullet in _gameState.Bullets)
+        {
+            bullet.Reset();
+            _gameState.BulletPool.Release(bullet);
+        }
+        foreach (var frog in _gameState.Frogs)
+        {
+            frog.Reset();
+            _gameState.FrogPool.Release(frog);
+        }
         _gameState.Frogs.Clear();
         _gameState.Bullets.Clear();
+
         _gameState.Camera.SnapTo(_gameState.Player.Position);
         _gameState.AmmoSystem.Reset();
         _gameState.StaminaSystem.Reset();
         _gameState.PlayerAnimation.Reset();
+        _lastRenderedPhase = null;
         _currentPhase = GamePhase.Playing;
     }
 
