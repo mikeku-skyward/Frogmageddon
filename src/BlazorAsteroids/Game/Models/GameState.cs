@@ -9,6 +9,7 @@ public class GameState : IGameState
     public List<Frog> Frogs { get; set; } = new();
     public List<Bullet> Bullets { get; set; } = new();
     public FrogSpawner FrogSpawner { get; set; } = new();
+    public AmmoSystem AmmoSystem { get; set; } = new();
 
     /// <summary>
     /// The viewport (canvas) width — what the player sees on screen.
@@ -159,13 +160,20 @@ public class GameState : IGameState
         // Remove dead bullets and frogs
         Bullets.RemoveAll(b => !b.IsAlive);
         Frogs.RemoveAll(f => !f.IsAlive);
+
+        // Update ammo system reload timer
+        AmmoSystem.Update(deltaTime);
     }
 
     /// <summary>
     /// Fires a bullet from the player toward a world-space target position.
+    /// Gated through AmmoSystem.TryFire() — returns early if ammo is unavailable or reloading.
     /// </summary>
     public void FireBullet(Vector2 targetWorld)
     {
+        if (!AmmoSystem.TryFire())
+            return;
+
         Vector2 direction = new Vector2(
             targetWorld.X - Player.Position.X,
             targetWorld.Y - Player.Position.Y

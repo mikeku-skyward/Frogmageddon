@@ -91,6 +91,12 @@ public class GameLoop : IGameLoop, IDisposable
                 mouse.Y + _gameState.Camera.Position.Y
             );
 
+            // Check for reload input (R key)
+            if (_inputManager.IsKeyPressed("r"))
+            {
+                _gameState.AmmoSystem.StartReload();
+            }
+
             // Check for shooting
             var click = _inputManager.ConsumePendingClick();
             if (click.HasValue)
@@ -107,6 +113,7 @@ public class GameLoop : IGameLoop, IDisposable
             // Check if player died
             if (_gameState.Player.Health <= 0)
             {
+                _gameState.AmmoSystem.CancelReload();
                 _currentPhase = GamePhase.GameOver;
             }
 
@@ -169,6 +176,7 @@ public class GameLoop : IGameLoop, IDisposable
         _gameState.Frogs.Clear();
         _gameState.Bullets.Clear();
         _gameState.Camera.SnapTo(_gameState.Player.Position);
+        _gameState.AmmoSystem.Reset();
         _currentPhase = GamePhase.Playing;
     }
 

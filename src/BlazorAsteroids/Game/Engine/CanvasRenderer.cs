@@ -56,6 +56,10 @@ public class CanvasRenderer : IRenderer
             bulletData[i * 3 + 2] = bullet.Radius;
         }
 
+        // Player position relative to camera (screen coordinates)
+        float playerScreenX = state.Player.Position.X - state.Camera.Position.X;
+        float playerScreenY = state.Player.Position.Y - state.Camera.Position.Y;
+
         await _module.InvokeVoidAsync("renderFrame",
             _canvas,
             state.Camera.Position.X,
@@ -66,7 +70,14 @@ public class CanvasRenderer : IRenderer
             state.Player.Size,
             frogData,
             bulletData,
-            state.Player.IsFlashing);
+            state.Player.IsFlashing,
+            state.AmmoSystem.CurrentAmmo,
+            AmmoSystem.MaxAmmo,
+            state.AmmoSystem.IsReloading,
+            state.AmmoSystem.ReloadProgress,
+            playerScreenX,
+            playerScreenY,
+            state.Player.Size);
     }
 
     public async Task RenderStartScreenAsync(int canvasWidth, int canvasHeight, StartButtonBounds buttonBounds)

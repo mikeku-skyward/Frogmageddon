@@ -113,8 +113,16 @@ export function clearCanvas(canvasElement) {
  * @param {number} size - Player size for triangle dimensions
  * @param {number[]} frogData - Flat array of frog data [x, y, rotation, size, ...]
  * @param {number[]} bulletData - Flat array of bullet data [x, y, radius, ...]
+ * @param {boolean} isFlashing - Whether the player is flashing (damage)
+ * @param {number} currentAmmo - Current ammo count
+ * @param {number} maxAmmo - Maximum ammo capacity
+ * @param {boolean} isReloading - Whether reload is in progress
+ * @param {number} reloadProgress - Reload progress ratio (0-1)
+ * @param {number} playerScreenX - Player screen X position
+ * @param {number} playerScreenY - Player screen Y position
+ * @param {number} playerSize - Player radius for positioning the reload bar
  */
-export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData, bulletData, isFlashing) {
+export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData, bulletData, isFlashing, currentAmmo, maxAmmo, isReloading, reloadProgress, playerScreenX, playerScreenY, playerSize) {
     const ctx = canvasElement.getContext('2d');
     const viewWidth = canvasElement.width;
     const viewHeight = canvasElement.height;
@@ -197,6 +205,31 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
     ctx.fill();
 
     ctx.restore();
+
+    // Draw ammo HUD in bottom-right corner
+    ctx.save();
+    ctx.font = 'bold 18px monospace';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(currentAmmo + '/' + maxAmmo, viewWidth - 32, viewHeight - 32);
+    ctx.restore();
+
+    // Draw reload progress bar above the player when reloading
+    if (isReloading) {
+        const barWidth = 40;
+        const barHeight = 6;
+        const barX = playerScreenX - barWidth / 2;
+        const barY = playerScreenY - playerSize - 20;
+
+        // Background (unfilled area)
+        ctx.fillStyle = '#333333';
+        ctx.fillRect(barX, barY, barWidth, barHeight);
+
+        // Filled portion (progress)
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(barX, barY, barWidth * reloadProgress, barHeight);
+    }
 }
 
 /**
