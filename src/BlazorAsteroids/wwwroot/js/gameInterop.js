@@ -11,6 +11,95 @@ let backgroundLoaded = false;
     backgroundImage.src = './images/game background.jpg';
 })();
 
+// Player sprite preloading
+let playerSprites = [null, null, null];
+let playerSpritesLoaded = false;
+
+(function loadPlayerSprites() {
+    const spritePaths = [
+        './images/stationary.png',   // index 0 - stationary
+        './images/walk 1.png',       // index 1 - walk1
+        './images/walk 2.png'        // index 2 - walk2
+    ];
+
+    let loadedCount = 0;
+    let failed = false;
+
+    spritePaths.forEach((path, index) => {
+        const img = new Image();
+        let timedOut = false;
+
+        const timeout = setTimeout(() => {
+            timedOut = true;
+            failed = true;
+            console.error('Timeout loading player sprite: ' + path);
+        }, 10000);
+
+        img.onload = () => {
+            if (timedOut) return;
+            clearTimeout(timeout);
+            playerSprites[index] = img;
+            loadedCount++;
+            if (loadedCount === 3 && !failed) {
+                playerSpritesLoaded = true;
+            }
+        };
+
+        img.onerror = () => {
+            if (timedOut) return;
+            clearTimeout(timeout);
+            failed = true;
+            console.error('Failed to load player sprite: ' + path);
+        };
+
+        img.src = path;
+    });
+})();
+
+// Frog sprite preloading
+let frogSprites = [null, null]; // index 0 = stationary, index 1 = jumping
+let frogSpritesLoaded = false;
+
+(function loadFrogSprites() {
+    const spritePaths = [
+        './images/frog stationary.png',  // index 0 - sitting
+        './images/frog jump.png'         // index 1 - hopping
+    ];
+
+    let loadedCount = 0;
+    let failed = false;
+
+    spritePaths.forEach((path, index) => {
+        const img = new Image();
+        let timedOut = false;
+
+        const timeout = setTimeout(() => {
+            timedOut = true;
+            failed = true;
+            console.error('Timeout loading frog sprite: ' + path);
+        }, 10000);
+
+        img.onload = () => {
+            if (timedOut) return;
+            clearTimeout(timeout);
+            frogSprites[index] = img;
+            loadedCount++;
+            if (loadedCount === 2 && !failed) {
+                frogSpritesLoaded = true;
+            }
+        };
+
+        img.onerror = () => {
+            if (timedOut) return;
+            clearTimeout(timeout);
+            failed = true;
+            console.error('Failed to load frog sprite: ' + path);
+        };
+
+        img.src = path;
+    });
+})();
+
 /**
  * Initializes the game loop: gets the 2D canvas context, registers keyboard
  * listeners, and starts the requestAnimationFrame loop.
@@ -122,8 +211,10 @@ export function clearCanvas(canvasElement) {
  * @param {number} playerScreenY - Player screen Y position
  * @param {number} playerSize - Player radius for positioning the reload bar
  * @param {number} staminaRatio - Current stamina ratio (0.0 to 1.0) for the HUD bar
+ * @param {number} animationFrameIndex - Current sprite index (0=stationary, 1=walk1, 2=walk2)
+ * @param {number} facingDirection - Facing direction (0=right, 1=left)
  */
-export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData, bulletData, isFlashing, currentAmmo, maxAmmo, isReloading, reloadProgress, playerScreenX, playerScreenY, playerSize, staminaRatio) {
+export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData, bulletData, isFlashing, currentAmmo, maxAmmo, isReloading, reloadProgress, playerScreenX, playerScreenY, playerSize, staminaRatio, animationFrameIndex, facingDirection) {
     const ctx = canvasElement.getContext('2d');
     const viewWidth = canvasElement.width;
     const viewHeight = canvasElement.height;
@@ -153,11 +244,12 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
 
     // Draw frogs
     if (frogData && frogData.length > 0) {
-        for (let i = 0; i < frogData.length; i += 4) {
+        for (let i = 0; i < frogData.length; i += 5) {
             const frogX = frogData[i] - cameraX;
             const frogY = frogData[i + 1] - cameraY;
             const frogRotation = frogData[i + 2];
             const frogSize = frogData[i + 3];
+            const isHopping = frogData[i + 4] > 0.5;
 
             // Only draw if on screen (with margin)
             if (frogX < -frogSize * 2 || frogX > viewWidth + frogSize * 2 ||
@@ -165,8 +257,28 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
                 continue;
             }
 
-            drawFrog(ctx, frogX, frogY, frogRotation, frogSize);
+            drawFrog(ctx, frogX, frogY, frogRotation, frogSize, isHopping);
         }
+    }
+
+    // Draw the player (after frogs, before bullets)
+    if (playerSpritesLoaded) {
+        drawPlayerSprite(ctx, playerScreenX, playerScreenY, playerSize, animationFrameIndex, facingDirection === 1, isFlashing);
+    } else {
+        // Fallback: draw the triangle
+        const screenX = playerX - cameraX;
+        const screenY = playerY - cameraY;
+        ctx.save();
+        ctx.translate(screenX, screenY);
+        ctx.rotate(rotation);
+        ctx.beginPath();
+        ctx.moveTo(size, 0);
+        ctx.lineTo(-size * 0.7, -size * 0.6);
+        ctx.lineTo(-size * 0.7, size * 0.6);
+        ctx.closePath();
+        ctx.fillStyle = isFlashing ? 'red' : 'cyan';
+        ctx.fill();
+        ctx.restore();
     }
 
     // Draw bullets
@@ -187,25 +299,6 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
             ctx.fill();
         }
     }
-
-    // Draw the player
-    const screenX = playerX - cameraX;
-    const screenY = playerY - cameraY;
-
-    ctx.save();
-    ctx.translate(screenX, screenY);
-    ctx.rotate(rotation);
-
-    ctx.beginPath();
-    ctx.moveTo(size, 0);
-    ctx.lineTo(-size * 0.7, -size * 0.6);
-    ctx.lineTo(-size * 0.7, size * 0.6);
-    ctx.closePath();
-
-    ctx.fillStyle = isFlashing ? 'red' : 'cyan';
-    ctx.fill();
-
-    ctx.restore();
 
     // Draw ammo HUD in bottom-right corner
     ctx.save();
@@ -248,48 +341,162 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
 }
 
 /**
- * Draws a frog as a green blob with eyes, facing its rotation direction.
+ * Draws a frog using sprite images, with fallback to programmatic drawing.
+ * Uses horizontal mirroring based on rotation to indicate facing direction (no rotation applied).
+ * @param {CanvasRenderingContext2D} ctx - The 2D canvas rendering context
+ * @param {number} x - Screen X position (center)
+ * @param {number} y - Screen Y position (center)
+ * @param {number} rotation - Frog rotation in radians (used to determine facing direction)
+ * @param {number} size - Frog size (radius)
+ * @param {boolean} isHopping - Whether the frog is currently hopping
  */
-function drawFrog(ctx, x, y, rotation, size) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(rotation);
+function drawFrog(ctx, x, y, rotation, size, isHopping) {
+    // Determine facing: if horizontal component of rotation points left, mirror the sprite
+    // cos(rotation) < 0 means facing left
+    const facingLeft = Math.cos(rotation) < 0;
 
-    // Body - oval shape
-    ctx.beginPath();
-    ctx.ellipse(0, 0, size, size * 0.7, 0, 0, Math.PI * 2);
-    ctx.fillStyle = '#2d8a2d';
-    ctx.fill();
-    ctx.strokeStyle = '#1a5c1a';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    if (frogSpritesLoaded) {
+        const img = isHopping ? frogSprites[1] : frogSprites[0];
+        if (!img) return;
 
-    // Eyes - two circles at the front
-    const eyeOffset = size * 0.5;
-    const eyeSpread = size * 0.4;
-    const eyeRadius = size * 0.25;
+        // Scale so the larger dimension equals 2 * size (frog diameter), preserve aspect ratio
+        const diameter = 2 * size;
+        let scaledWidth, scaledHeight;
+        if (img.naturalWidth >= img.naturalHeight) {
+            scaledWidth = diameter;
+            scaledHeight = (img.naturalHeight / img.naturalWidth) * diameter;
+        } else {
+            scaledHeight = diameter;
+            scaledWidth = (img.naturalWidth / img.naturalHeight) * diameter;
+        }
 
-    // Left eye
-    ctx.beginPath();
-    ctx.arc(eyeOffset, -eyeSpread, eyeRadius, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffcc';
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(eyeOffset + eyeRadius * 0.3, -eyeSpread, eyeRadius * 0.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#111';
-    ctx.fill();
+        const drawX = x - scaledWidth / 2;
+        const drawY = y - scaledHeight / 2;
 
-    // Right eye
-    ctx.beginPath();
-    ctx.arc(eyeOffset, eyeSpread, eyeRadius, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffcc';
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(eyeOffset + eyeRadius * 0.3, eyeSpread, eyeRadius * 0.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#111';
-    ctx.fill();
+        if (facingLeft) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(-1, 1);
+            ctx.translate(-x, -y);
+            ctx.drawImage(img, drawX, drawY, scaledWidth, scaledHeight);
+            ctx.restore();
+        } else {
+            ctx.drawImage(img, drawX, drawY, scaledWidth, scaledHeight);
+        }
+    } else {
+        // Fallback: programmatic green blob with eyes
+        ctx.save();
+        ctx.translate(x, y);
+        if (facingLeft) {
+            ctx.scale(-1, 1);
+        }
 
-    ctx.restore();
+        // Body - oval shape
+        ctx.beginPath();
+        ctx.ellipse(0, 0, size, size * 0.7, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#2d8a2d';
+        ctx.fill();
+        ctx.strokeStyle = '#1a5c1a';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Eyes - two circles at the front
+        const eyeOffset = size * 0.5;
+        const eyeSpread = size * 0.4;
+        const eyeRadius = size * 0.25;
+
+        // Left eye
+        ctx.beginPath();
+        ctx.arc(eyeOffset, -eyeSpread, eyeRadius, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffcc';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(eyeOffset + eyeRadius * 0.3, -eyeSpread, eyeRadius * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#111';
+        ctx.fill();
+
+        // Right eye
+        ctx.beginPath();
+        ctx.arc(eyeOffset, eyeSpread, eyeRadius, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffcc';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(eyeOffset + eyeRadius * 0.3, eyeSpread, eyeRadius * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#111';
+        ctx.fill();
+
+        ctx.restore();
+    }
+}
+
+/**
+ * Draws the player sprite at the given screen position, scaled and optionally mirrored/flashed.
+ * @param {CanvasRenderingContext2D} ctx - The 2D canvas rendering context
+ * @param {number} x - Screen X position (center)
+ * @param {number} y - Screen Y position (center)
+ * @param {number} size - Player radius; sprite larger dimension is scaled to 2 * size
+ * @param {number} spriteIndex - Index into playerSprites array (0=stationary, 1=walk1, 2=walk2)
+ * @param {boolean} facingLeft - Whether to mirror the sprite horizontally
+ * @param {boolean} isFlashing - Whether to apply a red damage overlay
+ */
+function drawPlayerSprite(ctx, x, y, size, spriteIndex, facingLeft, isFlashing) {
+    const img = playerSprites[spriteIndex];
+    if (!img) return;
+
+    // Scale so the larger dimension equals 2 * size (player diameter), preserve aspect ratio
+    const diameter = 2 * size;
+    let scaledWidth, scaledHeight;
+    if (img.naturalWidth >= img.naturalHeight) {
+        scaledWidth = diameter;
+        scaledHeight = (img.naturalHeight / img.naturalWidth) * diameter;
+    } else {
+        scaledHeight = diameter;
+        scaledWidth = (img.naturalWidth / img.naturalHeight) * diameter;
+    }
+
+    // Center the image on (x, y)
+    const drawX = x - scaledWidth / 2;
+    const drawY = y - scaledHeight / 2;
+
+    if (isFlashing) {
+        // Use an offscreen canvas to draw sprite + red overlay with source-atop compositing
+        const offscreen = document.createElement('canvas');
+        offscreen.width = Math.ceil(scaledWidth);
+        offscreen.height = Math.ceil(scaledHeight);
+        const offCtx = offscreen.getContext('2d');
+
+        // Draw the sprite onto the offscreen canvas
+        offCtx.drawImage(img, 0, 0, scaledWidth, scaledHeight);
+
+        // Apply red overlay only on top of the sprite pixels
+        offCtx.globalCompositeOperation = 'source-atop';
+        offCtx.fillStyle = 'rgba(255,0,0,0.4)';
+        offCtx.fillRect(0, 0, scaledWidth, scaledHeight);
+
+        // Now draw the offscreen canvas to the main context (with optional mirroring)
+        if (facingLeft) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(-1, 1);
+            ctx.translate(-x, -y);
+            ctx.drawImage(offscreen, drawX, drawY);
+            ctx.restore();
+        } else {
+            ctx.drawImage(offscreen, drawX, drawY);
+        }
+    } else {
+        // No flashing — draw directly with optional mirroring
+        if (facingLeft) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(-1, 1);
+            ctx.translate(-x, -y);
+            ctx.drawImage(img, drawX, drawY, scaledWidth, scaledHeight);
+            ctx.restore();
+        } else {
+            ctx.drawImage(img, drawX, drawY, scaledWidth, scaledHeight);
+        }
+    }
 }
 
 /**

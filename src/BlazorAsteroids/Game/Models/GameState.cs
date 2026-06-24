@@ -11,6 +11,7 @@ public class GameState : IGameState
     public FrogSpawner FrogSpawner { get; set; } = new();
     public AmmoSystem AmmoSystem { get; set; } = new();
     public StaminaSystem StaminaSystem { get; set; } = new();
+    public PlayerAnimationState PlayerAnimation { get; set; } = new();
 
     /// <summary>
     /// The viewport (canvas) width — what the player sees on screen.
@@ -37,6 +38,9 @@ public class GameState : IGameState
 
     public void Update(float deltaTime, Vector2 movementDirection, Vector2 cursorWorldPosition)
     {
+        // Update player animation state (before movement logic)
+        PlayerAnimation.Update(deltaTime, movementDirection, StaminaSystem.IsSprinting);
+
         // Tick down the damage flash timer
         if (Player.DamageFlashTimer > 0f)
         {

@@ -35,15 +35,16 @@ public class CanvasRenderer : IRenderer
     {
         if (_module is null) return;
 
-        // Build frog data as flat array: [x, y, rotation, size, ...]
-        var frogData = new float[state.Frogs.Count * 4];
+        // Build frog data as flat array: [x, y, rotation, size, isHopping, ...]
+        var frogData = new float[state.Frogs.Count * 5];
         for (int i = 0; i < state.Frogs.Count; i++)
         {
             var frog = state.Frogs[i];
-            frogData[i * 4] = frog.Position.X;
-            frogData[i * 4 + 1] = frog.Position.Y;
-            frogData[i * 4 + 2] = frog.Rotation;
-            frogData[i * 4 + 3] = frog.Size;
+            frogData[i * 5] = frog.Position.X;
+            frogData[i * 5 + 1] = frog.Position.Y;
+            frogData[i * 5 + 2] = frog.Rotation;
+            frogData[i * 5 + 3] = frog.Size;
+            frogData[i * 5 + 4] = frog.IsHopping ? 1f : 0f;
         }
 
         // Build bullet data as flat array: [x, y, radius, ...]
@@ -78,7 +79,9 @@ public class CanvasRenderer : IRenderer
             playerScreenX,
             playerScreenY,
             state.Player.Size,
-            Math.Clamp(state.StaminaSystem.Stamina, 0f, 1f));
+            Math.Clamp(state.StaminaSystem.Stamina, 0f, 1f),
+            state.PlayerAnimation.CurrentSpriteIndex,
+            (int)state.PlayerAnimation.Facing);
     }
 
     public async Task RenderStartScreenAsync(int canvasWidth, int canvasHeight, StartButtonBounds buttonBounds)

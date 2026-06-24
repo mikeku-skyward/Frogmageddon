@@ -34,6 +34,11 @@ public class Frog
     public float Rotation { get; set; }
     public bool IsAlive { get; set; } = true;
 
+    /// <summary>
+    /// Whether the frog is currently in its hopping state (used for sprite selection).
+    /// </summary>
+    public bool IsHopping => _state == FrogState.Hopping;
+
     public Frog(Vector2 spawnPosition)
     {
         Position = spawnPosition;

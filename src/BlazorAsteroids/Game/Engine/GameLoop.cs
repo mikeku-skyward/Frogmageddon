@@ -178,6 +178,7 @@ public class GameLoop : IGameLoop, IDisposable
         _gameState.Player.Position = new Vector2(
             _gameState.CanvasWidth / 2f,
             _gameState.CanvasHeight / 2f);
+        _gameState.PlayerAnimation.Reset();
     }
 
     private void HandleGameOverInput()
@@ -235,6 +236,7 @@ public class GameLoop : IGameLoop, IDisposable
         _gameState.Camera.SnapTo(_gameState.Player.Position);
         _gameState.AmmoSystem.Reset();
         _gameState.StaminaSystem.Reset();
+        _gameState.PlayerAnimation.Reset();
         _currentPhase = GamePhase.Playing;
     }
 
