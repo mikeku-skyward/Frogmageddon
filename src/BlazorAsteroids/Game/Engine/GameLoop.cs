@@ -18,8 +18,10 @@ public class GameLoop : IGameLoop, IDisposable
     private DotNetObjectReference<GameLoop>? _dotNetRef;
     private bool _isRunning;
     private GamePhase _currentPhase = GamePhase.StartScreen;
+    private GamePhase? _lastRenderedPhase;
     private StartButtonBounds _buttonBounds = null!;
     private StartButtonBounds _restartButtonBounds = null!;
+    private StartButtonBounds _instructionsButtonBounds = null!;
     private int _highScore;
 
     public GamePhase CurrentPhase => _currentPhase;
@@ -62,8 +64,16 @@ public class GameLoop : IGameLoop, IDisposable
             _buttonBounds.Width,
             _buttonBounds.Height);
 
+        // Instructions button sits below the start button on the start screen
+        _instructionsButtonBounds = new StartButtonBounds(
+            _buttonBounds.X,
+            _buttonBounds.Y + _buttonBounds.Height + 20f,
+            _buttonBounds.Width,
+            _buttonBounds.Height);
+
         // Render start screen immediately
         await _renderer.RenderStartScreenAsync(_gameState.CanvasWidth, _gameState.CanvasHeight, _buttonBounds);
+        _lastRenderedPhase = GamePhase.StartScreen;
     }
 
     [JSInvokable]
@@ -85,20 +95,42 @@ public class GameLoop : IGameLoop, IDisposable
         if (_currentPhase == GamePhase.StartScreen)
         {
             HandleStartScreenInput();
-            _ = _renderer.RenderStartScreenAsync(_gameState.CanvasWidth, _gameState.CanvasHeight, _buttonBounds);
+            if (_currentPhase == GamePhase.StartScreen && _lastRenderedPhase != _currentPhase)
+            {
+                _ = _renderer.RenderStartScreenAsync(_gameState.CanvasWidth, _gameState.CanvasHeight, _buttonBounds);
+                _lastRenderedPhase = _currentPhase;
+            }
+        }
+        else if (_currentPhase == GamePhase.Instructions)
+        {
+            HandleInstructionsInput();
+            if (_currentPhase == GamePhase.Instructions && _lastRenderedPhase != _currentPhase)
+            {
+                _ = _renderer.RenderInstructionsAsync(_gameState.CanvasWidth, _gameState.CanvasHeight,
+                    _buttonBounds.X, _buttonBounds.Y, _buttonBounds.Width, _buttonBounds.Height);
+                _lastRenderedPhase = _currentPhase;
+            }
         }
         else if (_currentPhase == GamePhase.GameOver)
         {
             HandleGameOverInput();
-            _ = _renderer.RenderGameOverAsync(_gameState.CanvasWidth, _gameState.CanvasHeight,
-                _buttonBounds.X, _buttonBounds.Y, _buttonBounds.Width, _buttonBounds.Height);
+            if (_currentPhase == GamePhase.GameOver && _lastRenderedPhase != _currentPhase)
+            {
+                _ = _renderer.RenderGameOverAsync(_gameState.CanvasWidth, _gameState.CanvasHeight,
+                    _buttonBounds.X, _buttonBounds.Y, _buttonBounds.Width, _buttonBounds.Height);
+                _lastRenderedPhase = _currentPhase;
+            }
         }
         else if (_currentPhase == GamePhase.Paused)
         {
             HandlePausedInput();
-            _ = _renderer.RenderPausedAsync(_gameState.CanvasWidth, _gameState.CanvasHeight,
-                _buttonBounds.X, _buttonBounds.Y, _buttonBounds.Width, _buttonBounds.Height,
-                _restartButtonBounds.Y);
+            if (_currentPhase == GamePhase.Paused && _lastRenderedPhase != _currentPhase)
+            {
+                _ = _renderer.RenderPausedAsync(_gameState.CanvasWidth, _gameState.CanvasHeight,
+                    _buttonBounds.X, _buttonBounds.Y, _buttonBounds.Width, _buttonBounds.Height,
+                    _restartButtonBounds.Y);
+                _lastRenderedPhase = _currentPhase;
+            }
         }
         else
         {
@@ -166,19 +198,50 @@ public class GameLoop : IGameLoop, IDisposable
 
         // Check mouse click
         var click = _inputManager.ConsumePendingClick();
-        if (click.HasValue && _buttonBounds.Contains(click.Value.X, click.Value.Y))
+        if (click.HasValue)
         {
-            TransitionToPlaying();
+            if (_buttonBounds.Contains(click.Value.X, click.Value.Y))
+            {
+                TransitionToPlaying();
+            }
+            else if (_instructionsButtonBounds.Contains(click.Value.X, click.Value.Y))
+            {
+                _currentPhase = GamePhase.Instructions;
+                _lastRenderedPhase = null;
+            }
         }
     }
 
     private void TransitionToPlaying()
     {
         _currentPhase = GamePhase.Playing;
+        _lastRenderedPhase = null;
         _gameState.Player.Position = new Vector2(
             _gameState.CanvasWidth / 2f,
             _gameState.CanvasHeight / 2f);
         _gameState.PlayerAnimation.Reset();
+    }
+
+    private void HandleInstructionsInput()
+    {
+        // Check Escape key to go back
+        if (_inputManager.ConsumeKeyPress("escape"))
+        {
+            _currentPhase = GamePhase.StartScreen;
+            _lastRenderedPhase = null;
+            return;
+        }
+
+        // Back button is drawn at bottom of screen: Y = canvasHeight - btnH - 40
+        float backBtnY = _gameState.CanvasHeight - _buttonBounds.Height - 40f;
+        var backBounds = new StartButtonBounds(_buttonBounds.X, backBtnY, _buttonBounds.Width, _buttonBounds.Height);
+
+        var click = _inputManager.ConsumePendingClick();
+        if (click.HasValue && backBounds.Contains(click.Value.X, click.Value.Y))
+        {
+            _currentPhase = GamePhase.StartScreen;
+            _lastRenderedPhase = null;
+        }
     }
 
     private void HandleGameOverInput()
@@ -204,6 +267,7 @@ public class GameLoop : IGameLoop, IDisposable
         if (_inputManager.ConsumeKeyPress("escape"))
         {
             _currentPhase = GamePhase.Playing;
+            _lastRenderedPhase = null;
             return;
         }
 
@@ -214,6 +278,7 @@ public class GameLoop : IGameLoop, IDisposable
             if (_buttonBounds.Contains(click.Value.X, click.Value.Y))
             {
                 _currentPhase = GamePhase.Playing;
+                _lastRenderedPhase = null;
             }
             else if (_restartButtonBounds.Contains(click.Value.X, click.Value.Y))
             {
@@ -231,12 +296,26 @@ public class GameLoop : IGameLoop, IDisposable
         _gameState.Player.Position = new Vector2(
             _gameState.WorldWidth / 2f,
             _gameState.WorldHeight / 2f);
+
+        // Return all entities to pools before clearing
+        foreach (var bullet in _gameState.Bullets)
+        {
+            bullet.Reset();
+            _gameState.BulletPool.Release(bullet);
+        }
+        foreach (var frog in _gameState.Frogs)
+        {
+            frog.Reset();
+            _gameState.FrogPool.Release(frog);
+        }
         _gameState.Frogs.Clear();
         _gameState.Bullets.Clear();
+
         _gameState.Camera.SnapTo(_gameState.Player.Position);
         _gameState.AmmoSystem.Reset();
         _gameState.StaminaSystem.Reset();
         _gameState.PlayerAnimation.Reset();
+        _lastRenderedPhase = null;
         _currentPhase = GamePhase.Playing;
     }
 

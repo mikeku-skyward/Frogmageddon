@@ -12,6 +12,8 @@ public class GameState : IGameState
     public AmmoSystem AmmoSystem { get; set; } = new();
     public StaminaSystem StaminaSystem { get; set; } = new();
     public PlayerAnimationState PlayerAnimation { get; set; } = new();
+    public ObjectPool<Bullet> BulletPool { get; } = new();
+    public ObjectPool<Frog> FrogPool { get; } = new();
 
     /// <summary>
     /// The viewport (canvas) width — what the player sees on screen.
@@ -73,7 +75,7 @@ public class GameState : IGameState
         Camera.Follow(Player.Position, cursorWorldPosition, deltaTime);
 
         // Spawn frogs (groups of 5-7)
-        var newFrogs = FrogSpawner.TrySpawn(deltaTime, Camera, Frogs.Count, Player.Position);
+        var newFrogs = FrogSpawner.TrySpawn(deltaTime, Camera, Frogs.Count, Player.Position, FrogPool);
         if (newFrogs.Count > 0)
             Frogs.AddRange(newFrogs);
 
@@ -129,9 +131,25 @@ public class GameState : IGameState
             }
         }
 
-        // Remove dead bullets and frogs
-        Bullets.RemoveAll(b => !b.IsAlive);
-        Frogs.RemoveAll(f => !f.IsAlive);
+        // Return dead entities to pools, then remove them
+        for (int i = Bullets.Count - 1; i >= 0; i--)
+        {
+            if (!Bullets[i].IsAlive)
+            {
+                Bullets[i].Reset();
+                BulletPool.Release(Bullets[i]);
+                Bullets.RemoveAt(i);
+            }
+        }
+        for (int i = Frogs.Count - 1; i >= 0; i--)
+        {
+            if (!Frogs[i].IsAlive)
+            {
+                Frogs[i].Reset();
+                FrogPool.Release(Frogs[i]);
+                Frogs.RemoveAt(i);
+            }
+        }
 
         // Update ammo system reload timer
         AmmoSystem.Update(deltaTime);
@@ -153,7 +171,9 @@ public class GameState : IGameState
 
         if (direction.Length() > 0)
         {
-            Bullets.Add(new Bullet(Player.Position, direction));
+            var bullet = BulletPool.Acquire();
+            bullet.Initialize(Player.Position, direction);
+            Bullets.Add(bullet);
         }
     }
 }

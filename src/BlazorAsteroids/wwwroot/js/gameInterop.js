@@ -2,6 +2,9 @@ let animationFrameId = null;
 let isContextLost = false;
 let backgroundImage = null;
 let backgroundLoaded = false;
+let _cachedRect = null;
+let _offscreenCanvas = null;
+let _offscreenCtx = null;
 
 // Preload the background image
 (function loadBackground() {
@@ -113,6 +116,12 @@ export function initializeGame(canvasElement, dotNetRef) {
             throw new Error('Failed to acquire 2D canvas context.');
         }
 
+        // Create cached offscreen canvas for damage flash compositing
+        _offscreenCanvas = document.createElement('canvas');
+        _offscreenCanvas.width = 128;
+        _offscreenCanvas.height = 128;
+        _offscreenCtx = _offscreenCanvas.getContext('2d');
+
         let lastTimestamp = 0;
 
         // Handle canvas context loss: pause the rendering loop
@@ -131,6 +140,14 @@ export function initializeGame(canvasElement, dotNetRef) {
             }
         });
 
+        // Cache bounding rect for mouse coordinate calculations
+        _cachedRect = canvasElement.getBoundingClientRect();
+
+        // Invalidate and recompute on window resize
+        window.addEventListener('resize', () => {
+            _cachedRect = canvasElement.getBoundingClientRect();
+        });
+
         // Keyboard handling – convert key to lowercase before sending to C#
         document.addEventListener('keydown', (e) => {
             dotNetRef.invokeMethodAsync('SetKeyDown', e.key.toLowerCase());
@@ -142,7 +159,7 @@ export function initializeGame(canvasElement, dotNetRef) {
 
         // Mouse click handling – compute coordinates relative to canvas
         canvasElement.addEventListener('click', (e) => {
-            const rect = canvasElement.getBoundingClientRect();
+            const rect = _cachedRect || canvasElement.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             dotNetRef.invokeMethodAsync('OnMouseClick', x, y);
@@ -150,7 +167,7 @@ export function initializeGame(canvasElement, dotNetRef) {
 
         // Mouse move handling – track cursor position relative to canvas
         canvasElement.addEventListener('mousemove', (e) => {
-            const rect = canvasElement.getBoundingClientRect();
+            const rect = _cachedRect || canvasElement.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             dotNetRef.invokeMethodAsync('OnMouseMove', x, y);
@@ -213,8 +230,10 @@ export function clearCanvas(canvasElement) {
  * @param {number} staminaRatio - Current stamina ratio (0.0 to 1.0) for the HUD bar
  * @param {number} animationFrameIndex - Current sprite index (0=stationary, 1=walk1, 2=walk2)
  * @param {number} facingDirection - Facing direction (0=right, 1=left)
+ * @param {number|null} frogCount - Number of active frogs (used to limit frogData reading); null means use full array
+ * @param {number|null} bulletCount - Number of active bullets (used to limit bulletData reading); null means use full array
  */
-export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData, bulletData, isFlashing, currentAmmo, maxAmmo, isReloading, reloadProgress, playerScreenX, playerScreenY, playerSize, staminaRatio, animationFrameIndex, facingDirection) {
+export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData, bulletData, isFlashing, currentAmmo, maxAmmo, isReloading, reloadProgress, playerScreenX, playerScreenY, playerSize, staminaRatio, animationFrameIndex, facingDirection, frogCount, bulletCount) {
     const ctx = canvasElement.getContext('2d');
     const viewWidth = canvasElement.width;
     const viewHeight = canvasElement.height;
@@ -243,8 +262,9 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
     }
 
     // Draw frogs
-    if (frogData && frogData.length > 0) {
-        for (let i = 0; i < frogData.length; i += 5) {
+    const frogDataLength = frogCount != null ? frogCount * 5 : (frogData ? frogData.length : 0);
+    if (frogData && frogDataLength > 0) {
+        for (let i = 0; i < frogDataLength; i += 5) {
             const frogX = frogData[i] - cameraX;
             const frogY = frogData[i + 1] - cameraY;
             const frogRotation = frogData[i + 2];
@@ -282,9 +302,10 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
     }
 
     // Draw bullets
-    if (bulletData && bulletData.length > 0) {
+    const bulletDataLength = bulletCount != null ? bulletCount * 3 : (bulletData ? bulletData.length : 0);
+    if (bulletData && bulletDataLength > 0) {
         ctx.fillStyle = '#ffff00';
-        for (let i = 0; i < bulletData.length; i += 3) {
+        for (let i = 0; i < bulletDataLength; i += 3) {
             const bx = bulletData[i] - cameraX;
             const by = bulletData[i + 1] - cameraY;
             const br = bulletData[i + 2];
@@ -459,13 +480,20 @@ function drawPlayerSprite(ctx, x, y, size, spriteIndex, facingLeft, isFlashing) 
     const drawY = y - scaledHeight / 2;
 
     if (isFlashing) {
-        // Use an offscreen canvas to draw sprite + red overlay with source-atop compositing
-        const offscreen = document.createElement('canvas');
-        offscreen.width = Math.ceil(scaledWidth);
-        offscreen.height = Math.ceil(scaledHeight);
-        const offCtx = offscreen.getContext('2d');
+        // Use the cached offscreen canvas to draw sprite + red overlay with source-atop compositing
+        const reqW = Math.ceil(scaledWidth);
+        const reqH = Math.ceil(scaledHeight);
+        // Resize cached offscreen canvas only when dimensions are insufficient
+        if (_offscreenCanvas.width < reqW || _offscreenCanvas.height < reqH) {
+            _offscreenCanvas.width = Math.max(_offscreenCanvas.width, reqW);
+            _offscreenCanvas.height = Math.max(_offscreenCanvas.height, reqH);
+        }
+        const offCtx = _offscreenCtx;
+        // Clear the reusable canvas before drawing
+        offCtx.clearRect(0, 0, _offscreenCanvas.width, _offscreenCanvas.height);
 
         // Draw the sprite onto the offscreen canvas
+        offCtx.globalCompositeOperation = 'source-over';
         offCtx.drawImage(img, 0, 0, scaledWidth, scaledHeight);
 
         // Apply red overlay only on top of the sprite pixels
@@ -479,10 +507,10 @@ function drawPlayerSprite(ctx, x, y, size, spriteIndex, facingLeft, isFlashing) 
             ctx.translate(x, y);
             ctx.scale(-1, 1);
             ctx.translate(-x, -y);
-            ctx.drawImage(offscreen, drawX, drawY);
+            ctx.drawImage(_offscreenCanvas, 0, 0, scaledWidth, scaledHeight, drawX, drawY, scaledWidth, scaledHeight);
             ctx.restore();
         } else {
-            ctx.drawImage(offscreen, drawX, drawY);
+            ctx.drawImage(_offscreenCanvas, 0, 0, scaledWidth, scaledHeight, drawX, drawY, scaledWidth, scaledHeight);
         }
     } else {
         // No flashing — draw directly with optional mirroring
@@ -528,7 +556,61 @@ export function drawPlayer(canvasElement, x, y, rotation, size) {
 }
 
 /**
- * Draws the start screen with title and start button.
+ * Draws a key-cap style rounded rectangle with a label inside.
+ */
+function drawKeyCap(ctx, x, y, label, width, height) {
+    const radius = 5;
+    ctx.save();
+
+    // Background
+    ctx.beginPath();
+    ctx.roundRect(x, y, width, height, radius);
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = '#888888';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Subtle inner highlight
+    ctx.beginPath();
+    ctx.roundRect(x + 1, y + 1, width - 2, height - 2, radius - 1);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + width / 2, y + height / 2);
+
+    ctx.restore();
+}
+
+/**
+ * Draws a WASD key cluster in arrow-key layout.
+ */
+function drawWASDCluster(ctx, centerX, y, keySize) {
+    const gap = 3;
+
+    // W on top, centered
+    drawKeyCap(ctx, centerX - keySize / 2, y, 'W', keySize, keySize);
+
+    // A, S, D on bottom row
+    const bottomY = y + keySize + gap;
+    const totalWidth = 3 * keySize + 2 * gap;
+    const startX = centerX - totalWidth / 2;
+
+    drawKeyCap(ctx, startX, bottomY, 'A', keySize, keySize);
+    drawKeyCap(ctx, startX + keySize + gap, bottomY, 'S', keySize, keySize);
+    drawKeyCap(ctx, startX + 2 * (keySize + gap), bottomY, 'D', keySize, keySize);
+}
+
+/**
+ * Draws the start screen with title, start button, and instructions button.
  * @param {HTMLCanvasElement} canvasElement - The canvas DOM element
  * @param {number} canvasWidth - Canvas width
  * @param {number} canvasHeight - Canvas height
@@ -546,21 +628,143 @@ export function drawStartScreen(canvasElement, canvasWidth, canvasHeight, btnX, 
     ctx.font = 'bold 48px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('Frogmageddon', canvasWidth / 2, canvasHeight / 2 - 60);
+    ctx.fillText('Frogmageddon', canvasWidth / 2, btnY - 60);
 
-    // Start button rectangle
+    // Start button
     ctx.fillStyle = '#333333';
     ctx.fillRect(btnX, btnY, btnW, btnH);
-
-    // Button border
     ctx.strokeStyle = 'white';
     ctx.lineWidth = 2;
     ctx.strokeRect(btnX, btnY, btnW, btnH);
-
-    // Button text
     ctx.fillStyle = 'white';
     ctx.font = 'bold 24px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     ctx.fillText('Start', btnX + btnW / 2, btnY + btnH / 2);
+
+    // Instructions button (below start button)
+    const instrBtnY = btnY + btnH + 20;
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(btnX, instrBtnY, btnW, btnH);
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(btnX, instrBtnY, btnW, btnH);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 20px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Instructions', btnX + btnW / 2, instrBtnY + btnH / 2);
+
+    // Tagline below buttons
+    ctx.fillStyle = '#999999';
+    ctx.font = 'italic 14px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Get rid of the frogs invading the office!', canvasWidth / 2, instrBtnY + btnH + 24);
+}
+
+/**
+ * Draws the instructions screen with key-cap visuals and a Back button.
+ * @param {HTMLCanvasElement} canvasElement - The canvas DOM element
+ * @param {number} canvasWidth - Canvas width
+ * @param {number} canvasHeight - Canvas height
+ * @param {number} btnX - Back button X position
+ * @param {number} btnY - Back button Y position
+ * @param {number} btnW - Back button width
+ * @param {number} btnH - Back button height
+ */
+export function drawInstructionsScreen(canvasElement, canvasWidth, canvasHeight, btnX, btnY, btnW, btnH) {
+    const ctx = canvasElement.getContext('2d');
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+    const KEYCAP_SIZE = 28;
+    const KEYCAP_WIDE = 50;
+    const ROW_HEIGHT = 42;
+    const WASD_CLUSTER_H = 2 * KEYCAP_SIZE + 4;
+
+    // Title
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 36px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('How to Play', canvasWidth / 2, 50);
+
+    // Objective
+    ctx.fillStyle = '#cccccc';
+    ctx.font = 'italic 15px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Get rid of the frogs invading the office!', canvasWidth / 2, 90);
+
+    // Instructions start
+    let currentY = 130;
+    const centerX = canvasWidth / 2;
+    const keysX = centerX - 60;
+    const labelX = centerX + 30;
+
+    // Row 1: WASD = Move
+    drawWASDCluster(ctx, keysX, currentY, KEYCAP_SIZE);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '15px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Move', labelX, currentY + WASD_CLUSTER_H / 2);
+    currentY += WASD_CLUSTER_H + 16;
+
+    // Row 2: Mouse + Click = Shoot
+    const mouseKeyX = keysX - KEYCAP_WIDE / 2 - 14;
+    drawKeyCap(ctx, mouseKeyX, currentY, 'Mouse', KEYCAP_WIDE, KEYCAP_SIZE);
+    ctx.fillStyle = '#aaaaaa';
+    ctx.font = '13px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('+', mouseKeyX + KEYCAP_WIDE + 10, currentY + KEYCAP_SIZE / 2);
+    drawKeyCap(ctx, mouseKeyX + KEYCAP_WIDE + 20, currentY, 'Click', KEYCAP_WIDE, KEYCAP_SIZE);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '15px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Shoot', labelX, currentY + KEYCAP_SIZE / 2);
+    currentY += ROW_HEIGHT;
+
+    // Row 3: R = Reload
+    drawKeyCap(ctx, keysX - KEYCAP_SIZE / 2, currentY, 'R', KEYCAP_SIZE, KEYCAP_SIZE);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '15px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Reload', labelX, currentY + KEYCAP_SIZE / 2);
+    currentY += ROW_HEIGHT;
+
+    // Row 4: Shift = Sprint
+    drawKeyCap(ctx, keysX - KEYCAP_WIDE / 2, currentY, 'Shift', KEYCAP_WIDE, KEYCAP_SIZE);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '15px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Sprint', labelX, currentY + KEYCAP_SIZE / 2);
+    currentY += ROW_HEIGHT;
+
+    // Row 5: Esc = Pause
+    drawKeyCap(ctx, keysX - KEYCAP_WIDE / 2, currentY, 'Esc', KEYCAP_WIDE, KEYCAP_SIZE);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '15px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Pause', labelX, currentY + KEYCAP_SIZE / 2);
+
+    // Back button at the bottom
+    const backBtnY = canvasHeight - btnH - 40;
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(btnX, backBtnY, btnW, btnH);
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(btnX, backBtnY, btnW, btnH);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 24px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Back', btnX + btnW / 2, backBtnY + btnH / 2);
 }
 
 /**

@@ -13,7 +13,7 @@ public record StartButtonBounds(float X, float Y, float Width, float Height)
         const float buttonWidth = 160f;
         const float buttonHeight = 50f;
         float x = (canvasWidth - buttonWidth) / 2f;
-        float y = (canvasHeight / 2f) + 40f; // Below vertical center
+        float y = (canvasHeight / 2f) - 10f; // Centered vertically
         return new StartButtonBounds(x, y, buttonWidth, buttonHeight);
     }
 }
