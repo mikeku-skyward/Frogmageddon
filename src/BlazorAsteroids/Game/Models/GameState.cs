@@ -100,10 +100,10 @@ public class GameState : IGameState
         // Update camera to smoothly follow midpoint between player and cursor
         Camera.Follow(Player.Position, cursorWorldPosition, deltaTime);
 
-        // Spawn frogs
-        var newFrog = FrogSpawner.TrySpawn(deltaTime, Camera, Frogs.Count);
-        if (newFrog != null)
-            Frogs.Add(newFrog);
+        // Spawn frogs (groups of 5-7)
+        var newFrogs = FrogSpawner.TrySpawn(deltaTime, Camera, Frogs.Count, Player.Position);
+        if (newFrogs.Count > 0)
+            Frogs.AddRange(newFrogs);
 
         // Update all frogs
         foreach (var frog in Frogs)

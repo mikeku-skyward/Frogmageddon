@@ -9,12 +9,12 @@ public class FrogSpawner
     /// <summary>
     /// Base time between frog spawns (seconds) at 100% rate.
     /// </summary>
-    private const float BaseSpawnInterval = 3.0f;
+    private const float BaseSpawnInterval = 2.0f;
 
     /// <summary>
     /// Maximum number of frogs alive at once.
     /// </summary>
-    public int MaxFrogs { get; set; } = 30;
+    public int MaxFrogs { get; set; } = 40;
 
     /// <summary>
     /// How far outside the viewport edge frogs spawn.
@@ -35,6 +35,38 @@ public class FrogSpawner
     /// Maximum spawn rate multiplier (2.0 = 200%).
     /// </summary>
     private const float MaxRateMultiplier = 2.0f;
+
+    /// <summary>
+    /// Minimum number of frogs in a spawn group.
+    /// </summary>
+    private const int MinGroupSize = 4;
+
+    /// <summary>
+    /// Maximum number of frogs in a spawn group.
+    /// </summary>
+    private const int MaxGroupSize = 6;
+
+    /// <summary>
+    /// Maximum offset from anchor along the edge axis for clustering.
+    /// </summary>
+    private const float ClusterRadius = 240f;
+
+    /// <summary>
+    /// Buffer distance (in screen pixels) from the player to the edge of the viewport.
+    /// Edges closer to the player than this threshold are excluded from spawning.
+    /// </summary>
+    private const float PlayerEdgeBuffer = 100f;
+
+    /// <summary>
+    /// Minimum distance from edge corners for anchor placement.
+    /// </summary>
+    private const float AnchorCornerMargin = 120f;
+
+    /// <summary>
+    /// Perpendicular spread (half-height of the spawn rectangle).
+    /// Frogs spawn within ±15px perpendicular to the edge.
+    /// </summary>
+    private const float PerpendicularSpread = 15f;
 
     public FrogSpawner()
     {
@@ -60,54 +92,131 @@ public class FrogSpawner
     }
 
     /// <summary>
-    /// Checks if it's time to spawn a new frog and returns a spawn position
-    /// just outside the camera viewport edges.
+    /// Checks if it's time to spawn a group of frogs and returns spawn positions
+    /// just outside the camera viewport on a single edge away from the player,
+    /// clustered around an anchor point. Returns an empty list if spawning is suppressed.
     /// </summary>
-    public Frog? TrySpawn(float deltaTime, Camera camera, int currentFrogCount)
+    public List<Frog> TrySpawn(float deltaTime, Camera camera, int currentFrogCount, Vector2 playerPosition)
     {
         _elapsedTime += deltaTime;
 
+        // If at max capacity, suppress spawning and reset timer
         if (currentFrogCount >= MaxFrogs)
-            return null;
-
-        // Higher multiplier = faster spawns = shorter interval
-        float currentInterval = BaseSpawnInterval / GetSpawnRateMultiplier();
+        {
+            _spawnTimer = BaseSpawnInterval / GetSpawnRateMultiplier();
+            return new List<Frog>();
+        }
 
         _spawnTimer -= deltaTime;
         if (_spawnTimer > 0)
-            return null;
+            return new List<Frog>();
 
-        _spawnTimer = currentInterval;
+        // Reset timer for next spawn event
+        _spawnTimer = BaseSpawnInterval / GetSpawnRateMultiplier();
 
-        // Pick a random edge: 0=top, 1=bottom, 2=left, 3=right
-        int edge = _random.Next(4);
-        float x, y;
+        // Choose group size uniformly in [MinGroupSize, MaxGroupSize], clamp to remaining capacity
+        int groupSize = _random.Next(MinGroupSize, MaxGroupSize + 1);
+        int remaining = MaxFrogs - currentFrogCount;
+        if (groupSize > remaining)
+            groupSize = remaining;
 
         float camLeft = camera.Position.X;
         float camTop = camera.Position.Y;
         float camRight = camLeft + camera.ViewportWidth;
         float camBottom = camTop + camera.ViewportHeight;
 
-        switch (edge)
+        // Determine player's screen-space position relative to viewport
+        float playerScreenX = playerPosition.X - camLeft;
+        float playerScreenY = playerPosition.Y - camTop;
+
+        // Only spawn from edges that are away from the player (with buffer).
+        // An edge is "away" if the player is far enough from that side of the viewport.
+        var validEdges = new List<int>(4);
+
+        // Top edge: valid if player is NOT near the top (player is in lower portion)
+        if (playerScreenY > PlayerEdgeBuffer)
+            validEdges.Add(0);
+        // Bottom edge: valid if player is NOT near the bottom
+        if (playerScreenY < camera.ViewportHeight - PlayerEdgeBuffer)
+            validEdges.Add(1);
+        // Left edge: valid if player is NOT near the left
+        if (playerScreenX > PlayerEdgeBuffer)
+            validEdges.Add(2);
+        // Right edge: valid if player is NOT near the right
+        if (playerScreenX < camera.ViewportWidth - PlayerEdgeBuffer)
+            validEdges.Add(3);
+
+        // Fallback: if no edges are valid (player is in center), allow all edges
+        if (validEdges.Count == 0)
         {
-            case 0: // Top edge
-                x = camLeft + (float)_random.NextDouble() * camera.ViewportWidth;
-                y = camTop - SpawnMargin;
-                break;
-            case 1: // Bottom edge
-                x = camLeft + (float)_random.NextDouble() * camera.ViewportWidth;
-                y = camBottom + SpawnMargin;
-                break;
-            case 2: // Left edge
-                x = camLeft - SpawnMargin;
-                y = camTop + (float)_random.NextDouble() * camera.ViewportHeight;
-                break;
-            default: // Right edge
-                x = camRight + SpawnMargin;
-                y = camTop + (float)_random.NextDouble() * camera.ViewportHeight;
-                break;
+            validEdges.Add(0);
+            validEdges.Add(1);
+            validEdges.Add(2);
+            validEdges.Add(3);
         }
 
-        return new Frog(new Vector2(x, y));
+        // Pick a random valid edge
+        int edge = validEdges[_random.Next(validEdges.Count)];
+
+        // Determine edge length and compute anchor point
+        float edgeLength;
+        if (edge == 0 || edge == 1) // Top or Bottom: horizontal edge
+            edgeLength = camera.ViewportWidth;
+        else // Left or Right: vertical edge
+            edgeLength = camera.ViewportHeight;
+
+        // Compute usable range for anchor (edge length minus 2 × AnchorCornerMargin)
+        float usableRange = edgeLength - 2f * AnchorCornerMargin;
+        float anchor;
+
+        if (usableRange <= 0)
+        {
+            // Edge too short: fallback to midpoint
+            anchor = edgeLength / 2f;
+        }
+        else
+        {
+            // Pick anchor within usable range, offset by AnchorCornerMargin from start
+            anchor = AnchorCornerMargin + (float)_random.NextDouble() * usableRange;
+        }
+
+        // Generate frogs clustered around the anchor
+        var frogs = new List<Frog>(groupSize);
+
+        for (int i = 0; i < groupSize; i++)
+        {
+            // Offset along edge axis: anchor ± ClusterRadius
+            float offset = anchor + ((float)_random.NextDouble() * 2f - 1f) * ClusterRadius;
+            // Perpendicular offset: ±PerpendicularSpread for rectangle spawn area
+            float perpOffset = ((float)_random.NextDouble() * 2f - 1f) * PerpendicularSpread;
+            float x, y;
+
+            switch (edge)
+            {
+                case 0: // Top edge: y fixed outside top, x varies
+                    x = camLeft + offset;
+                    y = camTop - SpawnMargin + perpOffset;
+                    break;
+                case 1: // Bottom edge: y fixed outside bottom, x varies
+                    x = camLeft + offset;
+                    y = camBottom + SpawnMargin + perpOffset;
+                    break;
+                case 2: // Left edge: x fixed outside left, y varies
+                    x = camLeft - SpawnMargin + perpOffset;
+                    y = camTop + offset;
+                    break;
+                default: // Right edge: x fixed outside right, y varies
+                    x = camRight + SpawnMargin + perpOffset;
+                    y = camTop + offset;
+                    break;
+            }
+
+            var frog = new Frog(new Vector2(x, y));
+            // Randomize initial rotation (0 to 2π)
+            frog.Rotation = (float)_random.NextDouble() * MathF.PI * 2f;
+            frogs.Add(frog);
+        }
+
+        return frogs;
     }
 }
