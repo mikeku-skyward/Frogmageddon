@@ -115,6 +115,7 @@ public class GameState : IGameState
                 {
                     bullet.IsAlive = false;
                     frog.IsAlive = false;
+                    Player.Score += 25;
                     break;
                 }
             }

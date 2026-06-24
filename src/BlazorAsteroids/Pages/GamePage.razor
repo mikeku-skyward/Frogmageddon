@@ -2,7 +2,9 @@
 @using BlazorAsteroids.Game.Engine
 @using BlazorAsteroids.Game.Interfaces
 @using BlazorAsteroids.Game.Models
+@using System.Threading
 @inject IJSRuntime JSRuntime
+@implements IDisposable
 
 @if (!string.IsNullOrEmpty(errorMessage))
 {
@@ -35,6 +37,7 @@
     private GameLoop? gameLoop;
     private GameState? gameState;
     private string? errorMessage;
+    private Timer? _uiRefreshTimer;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -86,6 +89,10 @@
             // Re-render the component so the UI displays the initial Player values (Health, Score)
             // since gameState was null during the first render pass.
             StateHasChanged();
+
+            // Periodically re-render the UI so the HTML overlay (Health, Score) stays
+            // in sync with game state updates driven by the JS game loop.
+            _uiRefreshTimer = new Timer(_ => InvokeAsync(StateHasChanged), null, 0, 100);
         }
         catch (Exception ex)
         {
@@ -97,5 +104,10 @@
     private async Task RetryInitialization()
     {
         await InitializeGameAsync();
+    }
+
+    public void Dispose()
+    {
+        _uiRefreshTimer?.Dispose();
     }
 }
