@@ -35,11 +35,6 @@ public class GameState : IGameState
     // Explicit interface implementation to satisfy IGameState.Player (read-only)
     Player IGameState.Player => Player;
 
-    /// <summary>
-    /// Minimum speed multiplier when moving directly away from cursor.
-    /// </summary>
-    private const float MinBackpedalMultiplier = 0.55f;
-
     public void Update(float deltaTime, Vector2 movementDirection, Vector2 cursorWorldPosition)
     {
         // Tick down the damage flash timer
@@ -57,35 +52,7 @@ public class GameState : IGameState
         // Update player movement
         if (movementDirection.Length() > 0)
         {
-            // Calculate speed multiplier based on angle between movement and cursor direction.
-            // Full speed if cursor is in the front 180° of movement.
-            // Gradually slows as cursor moves behind (toward directly opposite movement).
-            float speedMultiplier = 1f;
-
-            Vector2 toCursor = new Vector2(
-                cursorWorldPosition.X - Player.Position.X,
-                cursorWorldPosition.Y - Player.Position.Y
-            );
-
-            if (toCursor.Length() > 1f)
-            {
-                // Dot product of normalized movement and normalized cursor direction
-                Vector2 moveNorm = movementDirection.Normalized();
-                Vector2 cursorNorm = toCursor.Normalized();
-                float dot = moveNorm.X * cursorNorm.X + moveNorm.Y * cursorNorm.Y;
-
-                // dot = 1 means cursor is directly ahead (full speed)
-                // dot = 0 means cursor is perpendicular (full speed — front 180°)
-                // dot = -1 means cursor is directly behind (minimum speed)
-                if (dot < 0)
-                {
-                    // Remap dot from [-1, 0] to [MinBackpedalMultiplier, 1]
-                    // dot=0 -> multiplier=1, dot=-1 -> multiplier=MinBackpedalMultiplier
-                    speedMultiplier = 1f + dot * (1f - MinBackpedalMultiplier);
-                }
-            }
-
-            Vector2 velocity = movementDirection * (Player.Speed * speedMultiplier * StaminaSystem.SpeedMultiplier) * deltaTime;
+            Vector2 velocity = movementDirection * (Player.Speed * StaminaSystem.SpeedMultiplier) * deltaTime;
             Player.Position = Player.Position + velocity;
 
             // Clamp position to world bounds
