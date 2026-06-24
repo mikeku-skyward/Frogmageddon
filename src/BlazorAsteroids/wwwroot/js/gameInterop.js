@@ -313,8 +313,12 @@ export function drawStartScreen(canvasElement, canvasWidth, canvasHeight, btnX, 
  * @param {HTMLCanvasElement} canvasElement - The canvas DOM element
  * @param {number} canvasWidth - Canvas width
  * @param {number} canvasHeight - Canvas height
+ * @param {number} btnX - Button X position
+ * @param {number} btnY - Button Y position
+ * @param {number} btnW - Button width
+ * @param {number} btnH - Button height
  */
-export function drawGameOverScreen(canvasElement, canvasWidth, canvasHeight) {
+export function drawGameOverScreen(canvasElement, canvasWidth, canvasHeight, btnX, btnY, btnW, btnH) {
     const ctx = canvasElement.getContext('2d');
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
@@ -327,5 +331,19 @@ export function drawGameOverScreen(canvasElement, canvasWidth, canvasHeight) {
     ctx.font = 'bold 48px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('You died, Game Over.', canvasWidth / 2, canvasHeight / 2);
+    ctx.fillText('You died, Game Over.', canvasWidth / 2, canvasHeight / 2 - 60);
+
+    // Restart button rectangle
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(btnX, btnY, btnW, btnH);
+
+    // Button border
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(btnX, btnY, btnW, btnH);
+
+    // Button text
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 24px monospace';
+    ctx.fillText('Restart', btnX + btnW / 2, btnY + btnH / 2);
 }

@@ -79,11 +79,11 @@ public class CanvasRenderer : IRenderer
         }
     }
 
-    public async Task RenderGameOverAsync(int canvasWidth, int canvasHeight)
+    public async Task RenderGameOverAsync(int canvasWidth, int canvasHeight, float btnX, float btnY, float btnW, float btnH)
     {
         if (_module is not null)
         {
-            await _module.InvokeVoidAsync("drawGameOverScreen", _canvas, canvasWidth, canvasHeight);
+            await _module.InvokeVoidAsync("drawGameOverScreen", _canvas, canvasWidth, canvasHeight, btnX, btnY, btnW, btnH);
         }
     }
 }

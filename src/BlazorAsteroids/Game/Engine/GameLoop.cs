@@ -75,7 +75,9 @@ public class GameLoop : IGameLoop, IDisposable
         }
         else if (_currentPhase == GamePhase.GameOver)
         {
-            _ = _renderer.RenderGameOverAsync(_gameState.CanvasWidth, _gameState.CanvasHeight);
+            HandleGameOverInput();
+            _ = _renderer.RenderGameOverAsync(_gameState.CanvasWidth, _gameState.CanvasHeight,
+                _buttonBounds.X, _buttonBounds.Y, _buttonBounds.Width, _buttonBounds.Height);
         }
         else
         {
@@ -136,6 +138,38 @@ public class GameLoop : IGameLoop, IDisposable
         _gameState.Player.Position = new Vector2(
             _gameState.CanvasWidth / 2f,
             _gameState.CanvasHeight / 2f);
+    }
+
+    private void HandleGameOverInput()
+    {
+        // Check Enter key
+        if (_inputManager.IsKeyPressed("enter"))
+        {
+            RestartGame();
+            return;
+        }
+
+        // Check mouse click on restart button
+        var click = _inputManager.ConsumePendingClick();
+        if (click.HasValue && _buttonBounds.Contains(click.Value.X, click.Value.Y))
+        {
+            RestartGame();
+        }
+    }
+
+    private void RestartGame()
+    {
+        _gameState.Player.Health = 100;
+        _gameState.Player.Score = 0;
+        _gameState.Player.DamageFlashTimer = 0f;
+        _gameState.Player.InvincibilityTimer = 0f;
+        _gameState.Player.Position = new Vector2(
+            _gameState.WorldWidth / 2f,
+            _gameState.WorldHeight / 2f);
+        _gameState.Frogs.Clear();
+        _gameState.Bullets.Clear();
+        _gameState.Camera.SnapTo(_gameState.Player.Position);
+        _currentPhase = GamePhase.Playing;
     }
 
     [JSInvokable]
