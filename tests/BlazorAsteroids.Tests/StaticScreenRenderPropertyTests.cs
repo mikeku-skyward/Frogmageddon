@@ -34,7 +34,7 @@ public class StaticScreenRenderPropertyTests
             return Task.CompletedTask;
         }
 
-        public Task RenderGameOverAsync(int canvasWidth, int canvasHeight, float btnX, float btnY, float btnW, float btnH)
+        public Task RenderGameOverAsync(int canvasWidth, int canvasHeight, float btnX, float btnY, float btnW, float btnH, float fadeAlpha)
         {
             GameOverRenderCount++;
             return Task.CompletedTask;

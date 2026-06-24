@@ -233,7 +233,7 @@ export function clearCanvas(canvasElement) {
  * @param {number|null} frogCount - Number of active frogs (used to limit frogData reading); null means use full array
  * @param {number|null} bulletCount - Number of active bullets (used to limit bulletData reading); null means use full array
  */
-export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData, bulletData, isFlashing, currentAmmo, maxAmmo, isReloading, reloadProgress, playerScreenX, playerScreenY, playerSize, staminaRatio, animationFrameIndex, facingDirection, frogCount, bulletCount) {
+export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData, bulletData, isFlashing, currentAmmo, maxAmmo, isReloading, reloadProgress, playerScreenX, playerScreenY, playerSize, staminaRatio, animationFrameIndex, facingDirection, frogCount, bulletCount, healthRatio) {
     const ctx = canvasElement.getContext('2d');
     const viewWidth = canvasElement.width;
     const viewHeight = canvasElement.height;
@@ -321,15 +321,6 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
         }
     }
 
-    // Draw ammo HUD in bottom-right corner
-    ctx.save();
-    ctx.font = 'bold 18px monospace';
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText(currentAmmo + '/' + maxAmmo, viewWidth - 32, viewHeight - 32);
-    ctx.restore();
-
     // Draw reload progress bar above the player when reloading
     if (isReloading) {
         const barWidth = 40;
@@ -346,19 +337,85 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
         ctx.fillRect(barX, barY, barWidth * reloadProgress, barHeight);
     }
 
-    // Draw stamina bar in top-left HUD area, below health text overlay
-    const staminaBarX = 10;
-    const staminaBarY = 34;
-    const staminaBarWidth = 200;
-    const staminaBarHeight = 12;
+    // Draw health bar in top-left
+    const healthBarWidth = 130;
+    const healthBarHeight = 18;
+    const staminaBarHeight = 8;
+    const iconSize = 18;
+    const iconX = 10;
+    const barStartX = iconX + iconSize + 6;
+    const healthBarY = 10;
 
-    // Background (dark gray)
-    ctx.fillStyle = '#333333';
-    ctx.fillRect(staminaBarX, staminaBarY, staminaBarWidth, staminaBarHeight);
+    // Heart icon ♥
+    ctx.font = `${iconSize}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const iconCenterX = iconX + iconSize / 2;
+    ctx.fillStyle = '#ff4444';
+    ctx.fillText('♥', iconCenterX, healthBarY + healthBarHeight / 2);
 
-    // Fill (green) scaled by staminaRatio from the left edge
-    ctx.fillStyle = '#00cc00';
-    ctx.fillRect(staminaBarX, staminaBarY, staminaBarWidth * staminaRatio, staminaBarHeight);
+    // Health bar background
+    ctx.fillStyle = '#444444';
+    ctx.fillRect(barStartX, healthBarY, healthBarWidth, healthBarHeight);
+
+    // Health bar fill
+    const hp = healthRatio != null ? healthRatio : 1;
+    ctx.fillStyle = '#ff4444';
+    ctx.fillRect(barStartX, healthBarY, healthBarWidth * hp, healthBarHeight);
+
+    // Health number on bar
+    const healthNum = Math.round(hp * 100);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(healthNum.toString(), barStartX + healthBarWidth / 2, healthBarY + healthBarHeight / 2);
+
+    // Stamina bar below health
+    const staminaBarY = healthBarY + healthBarHeight + 5;
+
+    // Lightning bolt ⚡
+    ctx.font = `${iconSize}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#55bbff';
+    ctx.fillText('⚡', iconCenterX, staminaBarY + staminaBarHeight / 2);
+
+    // Stamina bar background
+    ctx.fillStyle = '#444444';
+    ctx.fillRect(barStartX, staminaBarY, healthBarWidth, staminaBarHeight);
+
+    // Stamina bar fill
+    ctx.fillStyle = '#55bbff';
+    ctx.fillRect(barStartX, staminaBarY, healthBarWidth * staminaRatio, staminaBarHeight);
+
+    // Draw ammo in bottom-right
+    ctx.save();
+    ctx.font = 'bold 18px monospace';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+
+    if (currentAmmo === 0) {
+        ctx.fillStyle = '#ff5555';
+    } else if (currentAmmo <= 5) {
+        ctx.fillStyle = '#ffcc00';
+    } else {
+        ctx.fillStyle = '#ffffff';
+    }
+
+    const ammoText = currentAmmo + '/' + maxAmmo;
+    const ammoTextX = viewWidth - 16;
+    const ammoTextY = viewHeight - 16;
+    ctx.fillText(ammoText, ammoTextX, ammoTextY);
+
+    // Bullet dot
+    const ammoTextWidth = ctx.measureText(ammoText).width;
+    ctx.fillStyle = '#ffff44';
+    ctx.font = '16px monospace';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('●', ammoTextX - ammoTextWidth - 6, ammoTextY);
+    ctx.restore();
 }
 
 /**
@@ -623,12 +680,30 @@ export function drawStartScreen(canvasElement, canvasWidth, canvasHeight, btnX, 
     const ctx = canvasElement.getContext('2d');
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
+    // Frog icon above the title
+    const titleY = btnY - 60;
+    if (frogSpritesLoaded && frogSprites[0]) {
+        const frogImg = frogSprites[0];
+        const frogDisplaySize = 80;
+        let frogW, frogH;
+        if (frogImg.naturalWidth >= frogImg.naturalHeight) {
+            frogW = frogDisplaySize;
+            frogH = (frogImg.naturalHeight / frogImg.naturalWidth) * frogDisplaySize;
+        } else {
+            frogH = frogDisplaySize;
+            frogW = (frogImg.naturalWidth / frogImg.naturalHeight) * frogDisplaySize;
+        }
+        const frogX = canvasWidth / 2 - frogW / 2;
+        const frogY = titleY - 30 - frogH;
+        ctx.drawImage(frogImg, frogX, frogY, frogW, frogH);
+    }
+
     // Title text
     ctx.fillStyle = 'white';
     ctx.font = 'bold 48px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('Frogmageddon', canvasWidth / 2, btnY - 60);
+    ctx.fillText('Frogmageddon', canvasWidth / 2, titleY);
 
     // Start button
     ctx.fillStyle = '#333333';
@@ -660,7 +735,7 @@ export function drawStartScreen(canvasElement, canvasWidth, canvasHeight, btnX, 
     ctx.font = 'italic 14px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillText('Get rid of the frogs invading the office!', canvasWidth / 2, instrBtnY + btnH + 24);
+    ctx.fillText('Get rid of the frogs invading the office!', canvasWidth / 2, instrBtnY + btnH + 40);
 }
 
 /**
@@ -677,51 +752,67 @@ export function drawInstructionsScreen(canvasElement, canvasWidth, canvasHeight,
     const ctx = canvasElement.getContext('2d');
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-    const KEYCAP_SIZE = 28;
-    const KEYCAP_WIDE = 50;
-    const ROW_HEIGHT = 42;
+    const KEYCAP_SIZE = 32;
+    const KEYCAP_WIDE = 56;
+    const ROW_HEIGHT = 48;
     const WASD_CLUSTER_H = 2 * KEYCAP_SIZE + 4;
+    const BACK_BTN_H = btnH;
+    const TOP_MARGIN = 50; // Below score area
+
+    // Calculate total content height for vertical centering
+    const titleH = 40;
+    const objectiveH = 24;
+    const gap = 20;
+    const instructionsH = WASD_CLUSTER_H + 20 + 4 * ROW_HEIGHT;
+    const totalContentH = titleH + gap + objectiveH + gap + instructionsH + gap + BACK_BTN_H;
+
+    // Center vertically but respect top margin
+    const availableH = canvasHeight - TOP_MARGIN;
+    let startY = TOP_MARGIN + Math.max(0, (availableH - totalContentH) / 2);
+
+    let currentY = startY;
 
     // Title
     ctx.fillStyle = 'white';
     ctx.font = 'bold 36px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('How to Play', canvasWidth / 2, 50);
+    ctx.fillText('How to Play', canvasWidth / 2, currentY + titleH / 2);
+    currentY += titleH + gap;
 
     // Objective
     ctx.fillStyle = '#cccccc';
-    ctx.font = 'italic 15px monospace';
+    ctx.font = 'italic 16px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('Get rid of the frogs invading the office!', canvasWidth / 2, 90);
+    ctx.fillText('Get rid of the frogs invading the office!', canvasWidth / 2, currentY + objectiveH / 2);
+    currentY += objectiveH + gap;
 
-    // Instructions start
-    let currentY = 130;
+    // Instructions
     const centerX = canvasWidth / 2;
-    const keysX = centerX - 60;
-    const labelX = centerX + 30;
+    const keysX = centerX - 70;
+    const labelX = centerX + 40;
 
     // Row 1: WASD = Move
     drawWASDCluster(ctx, keysX, currentY, KEYCAP_SIZE);
     ctx.fillStyle = '#ffffff';
-    ctx.font = '15px monospace';
+    ctx.font = '16px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText('Move', labelX, currentY + WASD_CLUSTER_H / 2);
-    currentY += WASD_CLUSTER_H + 16;
+    currentY += WASD_CLUSTER_H + 20;
 
     // Row 2: Mouse + Click = Shoot
-    const mouseKeyX = keysX - KEYCAP_WIDE / 2 - 14;
+    const mouseKeyX = keysX - KEYCAP_WIDE / 2 - 16;
     drawKeyCap(ctx, mouseKeyX, currentY, 'Mouse', KEYCAP_WIDE, KEYCAP_SIZE);
     ctx.fillStyle = '#aaaaaa';
-    ctx.font = '13px monospace';
+    ctx.font = '14px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('+', mouseKeyX + KEYCAP_WIDE + 10, currentY + KEYCAP_SIZE / 2);
-    drawKeyCap(ctx, mouseKeyX + KEYCAP_WIDE + 20, currentY, 'Click', KEYCAP_WIDE, KEYCAP_SIZE);
+    ctx.fillText('+', mouseKeyX + KEYCAP_WIDE + 12, currentY + KEYCAP_SIZE / 2);
+    drawKeyCap(ctx, mouseKeyX + KEYCAP_WIDE + 24, currentY, 'Click', KEYCAP_WIDE, KEYCAP_SIZE);
     ctx.fillStyle = '#ffffff';
-    ctx.font = '15px monospace';
+    ctx.font = '16px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText('Shoot', labelX, currentY + KEYCAP_SIZE / 2);
@@ -730,7 +821,7 @@ export function drawInstructionsScreen(canvasElement, canvasWidth, canvasHeight,
     // Row 3: R = Reload
     drawKeyCap(ctx, keysX - KEYCAP_SIZE / 2, currentY, 'R', KEYCAP_SIZE, KEYCAP_SIZE);
     ctx.fillStyle = '#ffffff';
-    ctx.font = '15px monospace';
+    ctx.font = '16px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText('Reload', labelX, currentY + KEYCAP_SIZE / 2);
@@ -739,7 +830,7 @@ export function drawInstructionsScreen(canvasElement, canvasWidth, canvasHeight,
     // Row 4: Shift = Sprint
     drawKeyCap(ctx, keysX - KEYCAP_WIDE / 2, currentY, 'Shift', KEYCAP_WIDE, KEYCAP_SIZE);
     ctx.fillStyle = '#ffffff';
-    ctx.font = '15px monospace';
+    ctx.font = '16px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText('Sprint', labelX, currentY + KEYCAP_SIZE / 2);
@@ -748,13 +839,14 @@ export function drawInstructionsScreen(canvasElement, canvasWidth, canvasHeight,
     // Row 5: Esc = Pause
     drawKeyCap(ctx, keysX - KEYCAP_WIDE / 2, currentY, 'Esc', KEYCAP_WIDE, KEYCAP_SIZE);
     ctx.fillStyle = '#ffffff';
-    ctx.font = '15px monospace';
+    ctx.font = '16px monospace';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText('Pause', labelX, currentY + KEYCAP_SIZE / 2);
+    currentY += ROW_HEIGHT + gap;
 
-    // Back button at the bottom
-    const backBtnY = canvasHeight - btnH - 40;
+    // Back button - centered below instructions
+    const backBtnY = currentY;
     ctx.fillStyle = '#333333';
     ctx.fillRect(btnX, backBtnY, btnW, btnH);
     ctx.strokeStyle = 'white';
@@ -777,34 +869,50 @@ export function drawInstructionsScreen(canvasElement, canvasWidth, canvasHeight,
  * @param {number} btnW - Button width
  * @param {number} btnH - Button height
  */
-export function drawGameOverScreen(canvasElement, canvasWidth, canvasHeight, btnX, btnY, btnW, btnH) {
+export function drawGameOverScreen(canvasElement, canvasWidth, canvasHeight, btnX, btnY, btnW, btnH, fadeAlpha) {
     const ctx = canvasElement.getContext('2d');
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-    // Dark background
-    ctx.fillStyle = '#000000';
+    // Don't clear — keep the last game frame visible as the death scene
+    // Draw a dark semi-transparent overlay that fades in
+    const alpha = fadeAlpha != null ? fadeAlpha * 0.7 : 0.7;
+    ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+    // Only show text and button after fade is mostly complete
+    const uiAlpha = fadeAlpha != null ? Math.max(0, (fadeAlpha - 0.3) / 0.7) : 1;
+    if (uiAlpha <= 0) return;
+
+    ctx.globalAlpha = uiAlpha;
+
+    // Calculate vertical center for title + gap + button as a group
+    const titleH = 48;
+    const gap = 30;
+    const totalH = titleH + gap + btnH;
+    const groupStartY = (canvasHeight - totalH) / 2;
 
     // Game over text in red
     ctx.fillStyle = 'red';
     ctx.font = 'bold 48px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('You died, Game Over.', canvasWidth / 2, canvasHeight / 2 - 60);
+    ctx.fillText('You died, Game Over.', canvasWidth / 2, groupStartY + titleH / 2);
 
-    // Restart button rectangle
+    // Restart button
+    const restartBtnY = groupStartY + titleH + gap;
     ctx.fillStyle = '#333333';
-    ctx.fillRect(btnX, btnY, btnW, btnH);
+    ctx.fillRect(btnX, restartBtnY, btnW, btnH);
 
     // Button border
     ctx.strokeStyle = 'white';
     ctx.lineWidth = 2;
-    ctx.strokeRect(btnX, btnY, btnW, btnH);
+    ctx.strokeRect(btnX, restartBtnY, btnW, btnH);
 
     // Button text
     ctx.fillStyle = 'white';
     ctx.font = 'bold 24px monospace';
-    ctx.fillText('Restart', btnX + btnW / 2, btnY + btnH / 2);
+    ctx.fillText('Restart', btnX + btnW / 2, restartBtnY + btnH / 2);
+
+    ctx.globalAlpha = 1;
 }
 
 /**

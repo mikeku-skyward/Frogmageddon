@@ -87,7 +87,8 @@ public class CanvasRenderer : IRenderer
             state.PlayerAnimation.CurrentSpriteIndex,
             (int)state.PlayerAnimation.Facing,
             state.Frogs.Count,
-            state.Bullets.Count);
+            state.Bullets.Count,
+            state.Player.Health / 100f);
     }
 
     public async Task RenderStartScreenAsync(int canvasWidth, int canvasHeight, StartButtonBounds buttonBounds)
@@ -100,11 +101,11 @@ public class CanvasRenderer : IRenderer
         }
     }
 
-    public async Task RenderGameOverAsync(int canvasWidth, int canvasHeight, float btnX, float btnY, float btnW, float btnH)
+    public async Task RenderGameOverAsync(int canvasWidth, int canvasHeight, float btnX, float btnY, float btnW, float btnH, float fadeAlpha)
     {
         if (_module is not null)
         {
-            await _module.InvokeVoidAsync("drawGameOverScreen", _canvas, canvasWidth, canvasHeight, btnX, btnY, btnW, btnH);
+            await _module.InvokeVoidAsync("drawGameOverScreen", _canvas, canvasWidth, canvasHeight, btnX, btnY, btnW, btnH, fadeAlpha);
         }
     }
 

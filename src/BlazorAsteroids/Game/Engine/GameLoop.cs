@@ -23,6 +23,8 @@ public class GameLoop : IGameLoop, IDisposable
     private StartButtonBounds _restartButtonBounds = null!;
     private StartButtonBounds _instructionsButtonBounds = null!;
     private int _highScore;
+    private float _gameOverFadeTimer;
+    private const float GameOverFadeDuration = 1.0f; // seconds
 
     public GamePhase CurrentPhase => _currentPhase;
     public int HighScore => _highScore;
@@ -71,9 +73,7 @@ public class GameLoop : IGameLoop, IDisposable
             _buttonBounds.Width,
             _buttonBounds.Height);
 
-        // Render start screen immediately
-        await _renderer.RenderStartScreenAsync(_gameState.CanvasWidth, _gameState.CanvasHeight, _buttonBounds);
-        _lastRenderedPhase = GamePhase.StartScreen;
+        // Start screen will render on the first Tick (allows time for sprites to load)
     }
 
     [JSInvokable]
@@ -113,12 +113,32 @@ public class GameLoop : IGameLoop, IDisposable
         }
         else if (_currentPhase == GamePhase.GameOver)
         {
-            HandleGameOverInput();
-            if (_currentPhase == GamePhase.GameOver && _lastRenderedPhase != _currentPhase)
+            _gameOverFadeTimer += deltaTimeSec;
+            float fadeAlpha = MathF.Min(_gameOverFadeTimer / GameOverFadeDuration, 1.0f);
+
+            // During fade: render the frozen game state then overlay on top each frame
+            // After fade completes: render-once
+            if (fadeAlpha < 1.0f)
             {
+                // Render the frozen death scene
+                _ = _renderer.RenderAsync(_gameState);
+                // Then overlay
                 _ = _renderer.RenderGameOverAsync(_gameState.CanvasWidth, _gameState.CanvasHeight,
-                    _buttonBounds.X, _buttonBounds.Y, _buttonBounds.Width, _buttonBounds.Height);
+                    _buttonBounds.X, _buttonBounds.Y, _buttonBounds.Width, _buttonBounds.Height, fadeAlpha);
+                HandleGameOverInput();
+            }
+            else if (_lastRenderedPhase != _currentPhase)
+            {
+                // Final frame: render once at full alpha
+                _ = _renderer.RenderAsync(_gameState);
+                _ = _renderer.RenderGameOverAsync(_gameState.CanvasWidth, _gameState.CanvasHeight,
+                    _buttonBounds.X, _buttonBounds.Y, _buttonBounds.Width, _buttonBounds.Height, 1.0f);
                 _lastRenderedPhase = _currentPhase;
+                HandleGameOverInput();
+            }
+            else
+            {
+                HandleGameOverInput();
             }
         }
         else if (_currentPhase == GamePhase.Paused)
@@ -179,6 +199,7 @@ public class GameLoop : IGameLoop, IDisposable
             {
                 _gameState.AmmoSystem.CancelReload();
                 _currentPhase = GamePhase.GameOver;
+                _gameOverFadeTimer = 0f;
                 _ = UpdateHighScoreAsync();
             }
 
@@ -232,8 +253,20 @@ public class GameLoop : IGameLoop, IDisposable
             return;
         }
 
-        // Back button is drawn at bottom of screen: Y = canvasHeight - btnH - 40
-        float backBtnY = _gameState.CanvasHeight - _buttonBounds.Height - 40f;
+        // Compute Back button Y matching the JS layout calculation
+        const float KEYCAP_SIZE = 32f;
+        const float ROW_HEIGHT = 48f;
+        const float WASD_CLUSTER_H = 2f * KEYCAP_SIZE + 4f;
+        const float TOP_MARGIN = 50f;
+        const float titleH = 40f;
+        const float objectiveH = 24f;
+        const float gap = 20f;
+        float instructionsH = WASD_CLUSTER_H + 20f + 4f * ROW_HEIGHT;
+        float totalContentH = titleH + gap + objectiveH + gap + instructionsH + gap + _buttonBounds.Height;
+        float availableH = _gameState.CanvasHeight - TOP_MARGIN;
+        float startY = TOP_MARGIN + MathF.Max(0f, (availableH - totalContentH) / 2f);
+        float backBtnY = startY + titleH + gap + objectiveH + gap + instructionsH + gap;
+
         var backBounds = new StartButtonBounds(_buttonBounds.X, backBtnY, _buttonBounds.Width, _buttonBounds.Height);
 
         var click = _inputManager.ConsumePendingClick();
@@ -253,9 +286,16 @@ public class GameLoop : IGameLoop, IDisposable
             return;
         }
 
-        // Check mouse click on restart button
+        // Restart button is vertically centered: matches JS calculation
+        const float titleH = 48f;
+        const float gap = 30f;
+        float totalH = titleH + gap + _buttonBounds.Height;
+        float groupStartY = (_gameState.CanvasHeight - totalH) / 2f;
+        float restartBtnY = groupStartY + titleH + gap;
+        var restartBounds = new StartButtonBounds(_buttonBounds.X, restartBtnY, _buttonBounds.Width, _buttonBounds.Height);
+
         var click = _inputManager.ConsumePendingClick();
-        if (click.HasValue && _buttonBounds.Contains(click.Value.X, click.Value.Y))
+        if (click.HasValue && restartBounds.Contains(click.Value.X, click.Value.Y))
         {
             RestartGame();
         }
