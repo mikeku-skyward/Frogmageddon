@@ -232,9 +232,9 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
         ctx.fillRect(barX, barY, barWidth * reloadProgress, barHeight);
     }
 
-    // Draw stamina bar in top-left HUD area
-    const staminaBarX = 16;
-    const staminaBarY = 16;
+    // Draw stamina bar in top-left HUD area, below health text overlay
+    const staminaBarX = 10;
+    const staminaBarY = 34;
     const staminaBarWidth = 200;
     const staminaBarHeight = 12;
 
