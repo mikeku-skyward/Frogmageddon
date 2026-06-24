@@ -13,21 +13,25 @@ public class GameLoop : IGameLoop, IDisposable
     private readonly IInputManager _inputManager;
     private readonly GameState _gameState;
     private readonly IRenderer _renderer;
+    private readonly IHighScoreService _highScoreService;
     private IJSObjectReference? _module;
     private DotNetObjectReference<GameLoop>? _dotNetRef;
     private bool _isRunning;
     private GamePhase _currentPhase = GamePhase.StartScreen;
     private StartButtonBounds _buttonBounds = null!;
     private StartButtonBounds _restartButtonBounds = null!;
+    private int _highScore;
 
     public GamePhase CurrentPhase => _currentPhase;
+    public int HighScore => _highScore;
 
-    public GameLoop(IJSRuntime jsRuntime, IInputManager inputManager, GameState gameState, IRenderer renderer)
+    public GameLoop(IJSRuntime jsRuntime, IInputManager inputManager, GameState gameState, IRenderer renderer, IHighScoreService highScoreService)
     {
         _jsRuntime = jsRuntime;
         _inputManager = inputManager;
         _gameState = gameState;
         _renderer = renderer;
+        _highScoreService = highScoreService;
     }
 
     public async Task InitializeAsync(ElementReference canvas)
@@ -46,6 +50,8 @@ public class GameLoop : IGameLoop, IDisposable
         await _module.InvokeVoidAsync("initializeGame", canvas, _dotNetRef);
 
         _isRunning = true;
+
+        _highScore = await _highScoreService.GetHighScoreAsync();
 
         _buttonBounds = StartButtonBounds.Create(_gameState.CanvasWidth, _gameState.CanvasHeight);
 
@@ -100,6 +106,7 @@ public class GameLoop : IGameLoop, IDisposable
             if (_inputManager.ConsumeKeyPress("escape"))
             {
                 _currentPhase = GamePhase.Paused;
+                _ = UpdateHighScoreAsync();
                 return;
             }
             // Phase 1: Read Input
@@ -140,6 +147,7 @@ public class GameLoop : IGameLoop, IDisposable
             {
                 _gameState.AmmoSystem.CancelReload();
                 _currentPhase = GamePhase.GameOver;
+                _ = UpdateHighScoreAsync();
             }
 
             // Phase 3: Render (fire and forget)
@@ -228,6 +236,16 @@ public class GameLoop : IGameLoop, IDisposable
         _gameState.AmmoSystem.Reset();
         _gameState.StaminaSystem.Reset();
         _currentPhase = GamePhase.Playing;
+    }
+
+    private async Task UpdateHighScoreAsync()
+    {
+        int currentScore = _gameState.Player.Score;
+        if (currentScore > _highScore)
+        {
+            _highScore = currentScore;
+            await _highScoreService.SaveHighScoreAsync(_highScore);
+        }
     }
 
     [JSInvokable]

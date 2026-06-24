@@ -23,6 +23,9 @@
     <div style="position: absolute; top: 10px; right: 10px; color: white; font-size: 18px; font-family: monospace; text-shadow: 1px 1px 2px black;">
         Score: @(gameState?.Player.Score ?? 0)
     </div>
+    <div style="position: absolute; top: 35px; right: 10px; color: gold; font-size: 14px; font-family: monospace; text-shadow: 1px 1px 2px black; display: @(IsHighScoreVisible ? "block" : "none");">
+        High Score: @(gameLoop?.HighScore ?? 0)
+    </div>
 </div>
 
 @code {
@@ -38,6 +41,9 @@
     private GameState? gameState;
     private string? errorMessage;
     private Timer? _uiRefreshTimer;
+
+    private bool IsHighScoreVisible =>
+        gameLoop?.CurrentPhase is GamePhase.StartScreen or GamePhase.Paused or GamePhase.GameOver;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -83,7 +89,7 @@
             // Position camera on player immediately so it's visible on first frame
             camera.SnapTo(gameState.Player.Position);
 
-            gameLoop = new GameLoop(JSRuntime, inputManager, gameState, renderer);
+            gameLoop = new GameLoop(JSRuntime, inputManager, gameState, renderer, new HighScoreService(JSRuntime));
             await gameLoop.InitializeAsync(canvasRef);
 
             // Re-render the component so the UI displays the initial Player values (Health, Score)
