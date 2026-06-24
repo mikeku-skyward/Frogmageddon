@@ -395,3 +395,58 @@ export function drawGameOverScreen(canvasElement, canvasWidth, canvasHeight, btn
     ctx.font = 'bold 24px monospace';
     ctx.fillText('Restart', btnX + btnW / 2, btnY + btnH / 2);
 }
+
+/**
+ * Draws the paused screen overlay.
+ * @param {HTMLCanvasElement} canvasElement - The canvas DOM element
+ * @param {number} canvasWidth - Canvas width
+ * @param {number} canvasHeight - Canvas height
+ * @param {number} btnX - Resume button X position
+ * @param {number} btnY - Resume button Y position
+ * @param {number} btnW - Button width
+ * @param {number} btnH - Button height
+ * @param {number} restartBtnY - Restart button Y position
+ */
+export function drawPausedScreen(canvasElement, canvasWidth, canvasHeight, btnX, btnY, btnW, btnH, restartBtnY) {
+    const ctx = canvasElement.getContext('2d');
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+    // Semi-transparent dark overlay
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+    // Paused text
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 48px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Paused', canvasWidth / 2, canvasHeight / 2 - 60);
+
+    // Resume button rectangle
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(btnX, btnY, btnW, btnH);
+
+    // Button border
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(btnX, btnY, btnW, btnH);
+
+    // Button text
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 24px monospace';
+    ctx.fillText('Resume', btnX + btnW / 2, btnY + btnH / 2);
+
+    // Restart button rectangle
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(btnX, restartBtnY, btnW, btnH);
+
+    // Button border
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(btnX, restartBtnY, btnW, btnH);
+
+    // Button text
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 24px monospace';
+    ctx.fillText('Restart', btnX + btnW / 2, restartBtnY + btnH / 2);
+}

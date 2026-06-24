@@ -18,6 +18,7 @@ public class GameLoop : IGameLoop, IDisposable
     private bool _isRunning;
     private GamePhase _currentPhase = GamePhase.StartScreen;
     private StartButtonBounds _buttonBounds = null!;
+    private StartButtonBounds _restartButtonBounds = null!;
 
     public GamePhase CurrentPhase => _currentPhase;
 
@@ -47,6 +48,13 @@ public class GameLoop : IGameLoop, IDisposable
         _isRunning = true;
 
         _buttonBounds = StartButtonBounds.Create(_gameState.CanvasWidth, _gameState.CanvasHeight);
+
+        // Restart button sits below the main button with some spacing
+        _restartButtonBounds = new StartButtonBounds(
+            _buttonBounds.X,
+            _buttonBounds.Y + _buttonBounds.Height + 20f,
+            _buttonBounds.Width,
+            _buttonBounds.Height);
 
         // Render start screen immediately
         await _renderer.RenderStartScreenAsync(_gameState.CanvasWidth, _gameState.CanvasHeight, _buttonBounds);
@@ -79,8 +87,21 @@ public class GameLoop : IGameLoop, IDisposable
             _ = _renderer.RenderGameOverAsync(_gameState.CanvasWidth, _gameState.CanvasHeight,
                 _buttonBounds.X, _buttonBounds.Y, _buttonBounds.Width, _buttonBounds.Height);
         }
+        else if (_currentPhase == GamePhase.Paused)
+        {
+            HandlePausedInput();
+            _ = _renderer.RenderPausedAsync(_gameState.CanvasWidth, _gameState.CanvasHeight,
+                _buttonBounds.X, _buttonBounds.Y, _buttonBounds.Width, _buttonBounds.Height,
+                _restartButtonBounds.Y);
+        }
         else
         {
+            // Check for pause input (Escape key)
+            if (_inputManager.ConsumeKeyPress("escape"))
+            {
+                _currentPhase = GamePhase.Paused;
+                return;
+            }
             // Phase 1: Read Input
             Vector2 direction = _inputManager.GetMovementDirection();
             bool shiftPressed = _inputManager.IsKeyPressed("shift");
@@ -165,6 +186,30 @@ public class GameLoop : IGameLoop, IDisposable
         if (click.HasValue && _buttonBounds.Contains(click.Value.X, click.Value.Y))
         {
             RestartGame();
+        }
+    }
+
+    private void HandlePausedInput()
+    {
+        // Check Escape key to resume
+        if (_inputManager.ConsumeKeyPress("escape"))
+        {
+            _currentPhase = GamePhase.Playing;
+            return;
+        }
+
+        // Check mouse click on resume or restart button
+        var click = _inputManager.ConsumePendingClick();
+        if (click.HasValue)
+        {
+            if (_buttonBounds.Contains(click.Value.X, click.Value.Y))
+            {
+                _currentPhase = GamePhase.Playing;
+            }
+            else if (_restartButtonBounds.Contains(click.Value.X, click.Value.Y))
+            {
+                RestartGame();
+            }
         }
     }
 

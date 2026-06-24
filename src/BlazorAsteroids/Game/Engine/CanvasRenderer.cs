@@ -98,4 +98,12 @@ public class CanvasRenderer : IRenderer
             await _module.InvokeVoidAsync("drawGameOverScreen", _canvas, canvasWidth, canvasHeight, btnX, btnY, btnW, btnH);
         }
     }
+
+    public async Task RenderPausedAsync(int canvasWidth, int canvasHeight, float btnX, float btnY, float btnW, float btnH, float restartBtnY)
+    {
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("drawPausedScreen", _canvas, canvasWidth, canvasHeight, btnX, btnY, btnW, btnH, restartBtnY);
+        }
+    }
 }

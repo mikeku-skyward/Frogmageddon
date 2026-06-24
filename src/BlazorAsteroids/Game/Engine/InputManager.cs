@@ -5,7 +5,7 @@ namespace BlazorAsteroids.Game.Engine;
 
 public class InputManager : IInputManager
 {
-    private static readonly HashSet<string> ValidKeys = new() { "w", "a", "s", "d", "enter", "r", "shift" };
+    private static readonly HashSet<string> ValidKeys = new() { "w", "a", "s", "d", "enter", "r", "shift", "escape" };
     private readonly HashSet<string> _pressedKeys = new();
     private (float X, float Y)? _pendingClick;
     private (float X, float Y) _mousePosition;
@@ -63,6 +63,18 @@ public class InputManager : IInputManager
             return false;
 
         return _pressedKeys.Contains(key.ToLowerInvariant());
+    }
+
+    /// <summary>
+    /// Returns true if the key is pressed and immediately removes it,
+    /// ensuring it only triggers once per press.
+    /// </summary>
+    public bool ConsumeKeyPress(string key)
+    {
+        if (string.IsNullOrEmpty(key))
+            return false;
+
+        return _pressedKeys.Remove(key.ToLowerInvariant());
     }
 
     public void SetMouseClick(float x, float y)

@@ -8,6 +8,7 @@ public interface IInputManager
     void SetKeyUp(string key);
     Vector2 GetMovementDirection();
     bool IsKeyPressed(string key);
+    bool ConsumeKeyPress(string key);
     void SetMouseClick(float x, float y);
     void SetMousePosition(float x, float y);
     (float X, float Y) MousePosition { get; }
