@@ -115,4 +115,12 @@ public class CanvasRenderer : IRenderer
             await _module.InvokeVoidAsync("drawPausedScreen", _canvas, canvasWidth, canvasHeight, btnX, btnY, btnW, btnH, restartBtnY);
         }
     }
+
+    public async Task RenderInstructionsAsync(int canvasWidth, int canvasHeight, float btnX, float btnY, float btnW, float btnH)
+    {
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("drawInstructionsScreen", _canvas, canvasWidth, canvasHeight, btnX, btnY, btnW, btnH);
+        }
+    }
 }

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "E6xJzeV13wE=",
+  "dgSpecHash": "s09Xi6+Gr/w=",
   "success": true,
-  "projectFilePath": "c:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj",
+  "projectFilePath": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\heidiy\\.nuget\\packages\\anglesharp\\1.4.0\\anglesharp.1.4.0.nupkg.sha512",
     "C:\\Users\\heidiy\\.nuget\\packages\\anglesharp.css\\1.0.0-beta.157\\anglesharp.css.1.0.0-beta.157.nupkg.sha512",

@@ -7105,8 +7105,8 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "c:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj": {
-              "projectPath": "c:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj"
+            "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj": {
+              "projectPath": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj"
             }
           }
         }

@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj": {}
+    "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj": {}
   },
   "projects": {
-    "c:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj": {
+    "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj",
+        "projectUniqueName": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj",
         "projectName": "BlazorAsteroids",
-        "projectPath": "c:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj",
+        "projectPath": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj",
         "packagesPath": "C:\\Users\\heidiy\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\obj\\",
+        "outputPath": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "c:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\NuGet.Config",
+          "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\NuGet.Config",
           "C:\\Users\\heidiy\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
@@ -103,20 +103,20 @@
         }
       }
     },
-    "c:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj": {
+    "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj",
+        "projectUniqueName": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj",
         "projectName": "BlazorAsteroids.Tests",
-        "projectPath": "c:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj",
+        "projectPath": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\BlazorAsteroids.Tests.csproj",
         "packagesPath": "C:\\Users\\heidiy\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\obj\\",
+        "outputPath": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\tests\\BlazorAsteroids.Tests\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "c:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\NuGet.Config",
+          "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\NuGet.Config",
           "C:\\Users\\heidiy\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
@@ -131,8 +131,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "c:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj": {
-                "projectPath": "c:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj"
+              "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj": {
+                "projectPath": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj"
               }
             }
           }

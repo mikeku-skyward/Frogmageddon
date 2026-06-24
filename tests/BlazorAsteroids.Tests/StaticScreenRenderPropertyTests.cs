@@ -45,6 +45,11 @@ public class StaticScreenRenderPropertyTests
             PausedRenderCount++;
             return Task.CompletedTask;
         }
+
+        public Task RenderInstructionsAsync(int canvasWidth, int canvasHeight, float btnX, float btnY, float btnW, float btnH)
+        {
+            return Task.CompletedTask;
+        }
     }
 
     private class MockInputManager : IInputManager

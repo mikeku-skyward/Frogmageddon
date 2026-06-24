@@ -556,7 +556,61 @@ export function drawPlayer(canvasElement, x, y, rotation, size) {
 }
 
 /**
- * Draws the start screen with title and start button.
+ * Draws a key-cap style rounded rectangle with a label inside.
+ */
+function drawKeyCap(ctx, x, y, label, width, height) {
+    const radius = 5;
+    ctx.save();
+
+    // Background
+    ctx.beginPath();
+    ctx.roundRect(x, y, width, height, radius);
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = '#888888';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Subtle inner highlight
+    ctx.beginPath();
+    ctx.roundRect(x + 1, y + 1, width - 2, height - 2, radius - 1);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + width / 2, y + height / 2);
+
+    ctx.restore();
+}
+
+/**
+ * Draws a WASD key cluster in arrow-key layout.
+ */
+function drawWASDCluster(ctx, centerX, y, keySize) {
+    const gap = 3;
+
+    // W on top, centered
+    drawKeyCap(ctx, centerX - keySize / 2, y, 'W', keySize, keySize);
+
+    // A, S, D on bottom row
+    const bottomY = y + keySize + gap;
+    const totalWidth = 3 * keySize + 2 * gap;
+    const startX = centerX - totalWidth / 2;
+
+    drawKeyCap(ctx, startX, bottomY, 'A', keySize, keySize);
+    drawKeyCap(ctx, startX + keySize + gap, bottomY, 'S', keySize, keySize);
+    drawKeyCap(ctx, startX + 2 * (keySize + gap), bottomY, 'D', keySize, keySize);
+}
+
+/**
+ * Draws the start screen with title, start button, and instructions button.
  * @param {HTMLCanvasElement} canvasElement - The canvas DOM element
  * @param {number} canvasWidth - Canvas width
  * @param {number} canvasHeight - Canvas height
@@ -574,21 +628,143 @@ export function drawStartScreen(canvasElement, canvasWidth, canvasHeight, btnX, 
     ctx.font = 'bold 48px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('Frogmageddon', canvasWidth / 2, canvasHeight / 2 - 60);
+    ctx.fillText('Frogmageddon', canvasWidth / 2, btnY - 60);
 
-    // Start button rectangle
+    // Start button
     ctx.fillStyle = '#333333';
     ctx.fillRect(btnX, btnY, btnW, btnH);
-
-    // Button border
     ctx.strokeStyle = 'white';
     ctx.lineWidth = 2;
     ctx.strokeRect(btnX, btnY, btnW, btnH);
-
-    // Button text
     ctx.fillStyle = 'white';
     ctx.font = 'bold 24px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     ctx.fillText('Start', btnX + btnW / 2, btnY + btnH / 2);
+
+    // Instructions button (below start button)
+    const instrBtnY = btnY + btnH + 20;
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(btnX, instrBtnY, btnW, btnH);
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(btnX, instrBtnY, btnW, btnH);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 20px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Instructions', btnX + btnW / 2, instrBtnY + btnH / 2);
+
+    // Tagline below buttons
+    ctx.fillStyle = '#999999';
+    ctx.font = 'italic 14px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Get rid of the frogs invading the office!', canvasWidth / 2, instrBtnY + btnH + 24);
+}
+
+/**
+ * Draws the instructions screen with key-cap visuals and a Back button.
+ * @param {HTMLCanvasElement} canvasElement - The canvas DOM element
+ * @param {number} canvasWidth - Canvas width
+ * @param {number} canvasHeight - Canvas height
+ * @param {number} btnX - Back button X position
+ * @param {number} btnY - Back button Y position
+ * @param {number} btnW - Back button width
+ * @param {number} btnH - Back button height
+ */
+export function drawInstructionsScreen(canvasElement, canvasWidth, canvasHeight, btnX, btnY, btnW, btnH) {
+    const ctx = canvasElement.getContext('2d');
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+    const KEYCAP_SIZE = 28;
+    const KEYCAP_WIDE = 50;
+    const ROW_HEIGHT = 42;
+    const WASD_CLUSTER_H = 2 * KEYCAP_SIZE + 4;
+
+    // Title
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 36px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('How to Play', canvasWidth / 2, 50);
+
+    // Objective
+    ctx.fillStyle = '#cccccc';
+    ctx.font = 'italic 15px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Get rid of the frogs invading the office!', canvasWidth / 2, 90);
+
+    // Instructions start
+    let currentY = 130;
+    const centerX = canvasWidth / 2;
+    const keysX = centerX - 60;
+    const labelX = centerX + 30;
+
+    // Row 1: WASD = Move
+    drawWASDCluster(ctx, keysX, currentY, KEYCAP_SIZE);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '15px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Move', labelX, currentY + WASD_CLUSTER_H / 2);
+    currentY += WASD_CLUSTER_H + 16;
+
+    // Row 2: Mouse + Click = Shoot
+    const mouseKeyX = keysX - KEYCAP_WIDE / 2 - 14;
+    drawKeyCap(ctx, mouseKeyX, currentY, 'Mouse', KEYCAP_WIDE, KEYCAP_SIZE);
+    ctx.fillStyle = '#aaaaaa';
+    ctx.font = '13px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('+', mouseKeyX + KEYCAP_WIDE + 10, currentY + KEYCAP_SIZE / 2);
+    drawKeyCap(ctx, mouseKeyX + KEYCAP_WIDE + 20, currentY, 'Click', KEYCAP_WIDE, KEYCAP_SIZE);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '15px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Shoot', labelX, currentY + KEYCAP_SIZE / 2);
+    currentY += ROW_HEIGHT;
+
+    // Row 3: R = Reload
+    drawKeyCap(ctx, keysX - KEYCAP_SIZE / 2, currentY, 'R', KEYCAP_SIZE, KEYCAP_SIZE);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '15px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Reload', labelX, currentY + KEYCAP_SIZE / 2);
+    currentY += ROW_HEIGHT;
+
+    // Row 4: Shift = Sprint
+    drawKeyCap(ctx, keysX - KEYCAP_WIDE / 2, currentY, 'Shift', KEYCAP_WIDE, KEYCAP_SIZE);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '15px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Sprint', labelX, currentY + KEYCAP_SIZE / 2);
+    currentY += ROW_HEIGHT;
+
+    // Row 5: Esc = Pause
+    drawKeyCap(ctx, keysX - KEYCAP_WIDE / 2, currentY, 'Esc', KEYCAP_WIDE, KEYCAP_SIZE);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '15px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Pause', labelX, currentY + KEYCAP_SIZE / 2);
+
+    // Back button at the bottom
+    const backBtnY = canvasHeight - btnH - 40;
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(btnX, backBtnY, btnW, btnH);
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(btnX, backBtnY, btnW, btnH);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 24px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Back', btnX + btnW / 2, backBtnY + btnH / 2);
 }
 
 /**
