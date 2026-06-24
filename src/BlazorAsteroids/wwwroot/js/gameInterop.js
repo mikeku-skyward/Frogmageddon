@@ -121,8 +121,9 @@ export function clearCanvas(canvasElement) {
  * @param {number} playerScreenX - Player screen X position
  * @param {number} playerScreenY - Player screen Y position
  * @param {number} playerSize - Player radius for positioning the reload bar
+ * @param {number} staminaRatio - Current stamina ratio (0.0 to 1.0) for the HUD bar
  */
-export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData, bulletData, isFlashing, currentAmmo, maxAmmo, isReloading, reloadProgress, playerScreenX, playerScreenY, playerSize) {
+export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, rotation, size, frogData, bulletData, isFlashing, currentAmmo, maxAmmo, isReloading, reloadProgress, playerScreenX, playerScreenY, playerSize, staminaRatio) {
     const ctx = canvasElement.getContext('2d');
     const viewWidth = canvasElement.width;
     const viewHeight = canvasElement.height;
@@ -230,6 +231,20 @@ export function renderFrame(canvasElement, cameraX, cameraY, playerX, playerY, r
         ctx.fillStyle = '#00ff00';
         ctx.fillRect(barX, barY, barWidth * reloadProgress, barHeight);
     }
+
+    // Draw stamina bar in top-left HUD area
+    const staminaBarX = 16;
+    const staminaBarY = 16;
+    const staminaBarWidth = 200;
+    const staminaBarHeight = 12;
+
+    // Background (dark gray)
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(staminaBarX, staminaBarY, staminaBarWidth, staminaBarHeight);
+
+    // Fill (green) scaled by staminaRatio from the left edge
+    ctx.fillStyle = '#00cc00';
+    ctx.fillRect(staminaBarX, staminaBarY, staminaBarWidth * staminaRatio, staminaBarHeight);
 }
 
 /**

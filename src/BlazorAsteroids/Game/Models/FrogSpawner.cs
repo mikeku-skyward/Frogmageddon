@@ -8,13 +8,14 @@ public class FrogSpawner
 
     /// <summary>
     /// Base time between frog spawns (seconds) at 100% rate.
+    /// At game start the effective interval is 3.5s, ramping down to 1.75s by 2 minutes.
     /// </summary>
-    private const float BaseSpawnInterval = 2.0f;
+    private const float BaseSpawnInterval = 3.5f;
 
     /// <summary>
     /// Maximum number of frogs alive at once.
     /// </summary>
-    public int MaxFrogs { get; set; } = 40;
+    public int MaxFrogs { get; set; } = 30;
 
     /// <summary>
     /// How far outside the viewport edge frogs spawn.
@@ -23,8 +24,9 @@ public class FrogSpawner
 
     /// <summary>
     /// Time (seconds) before spawn rate starts increasing.
+    /// Ramp begins immediately for a gradual increase over the first 2 minutes.
     /// </summary>
-    private const float RampStartTime = 30f;
+    private const float RampStartTime = 0f;
 
     /// <summary>
     /// Time (seconds) when spawn rate reaches maximum (200%).
@@ -37,14 +39,29 @@ public class FrogSpawner
     private const float MaxRateMultiplier = 2.0f;
 
     /// <summary>
-    /// Minimum number of frogs in a spawn group.
+    /// Minimum number of frogs in a spawn group (early game, first 60s).
     /// </summary>
-    private const int MinGroupSize = 4;
+    private const int EarlyMinGroupSize = 2;
 
     /// <summary>
-    /// Maximum number of frogs in a spawn group.
+    /// Maximum number of frogs in a spawn group (early game, first 60s).
     /// </summary>
-    private const int MaxGroupSize = 6;
+    private const int EarlyMaxGroupSize = 3;
+
+    /// <summary>
+    /// Minimum number of frogs in a spawn group (after 60s).
+    /// </summary>
+    private const int LateMinGroupSize = 4;
+
+    /// <summary>
+    /// Maximum number of frogs in a spawn group (after 60s).
+    /// </summary>
+    private const int LateMaxGroupSize = 5;
+
+    /// <summary>
+    /// Time threshold (seconds) when group size transitions from early to late.
+    /// </summary>
+    private const float GroupSizeTransitionTime = 60f;
 
     /// <summary>
     /// Maximum offset from anchor along the edge axis for clustering.
@@ -114,8 +131,10 @@ public class FrogSpawner
         // Reset timer for next spawn event
         _spawnTimer = BaseSpawnInterval / GetSpawnRateMultiplier();
 
-        // Choose group size uniformly in [MinGroupSize, MaxGroupSize], clamp to remaining capacity
-        int groupSize = _random.Next(MinGroupSize, MaxGroupSize + 1);
+        // Choose group size based on elapsed time, clamp to remaining capacity
+        int minGroup = _elapsedTime < GroupSizeTransitionTime ? EarlyMinGroupSize : LateMinGroupSize;
+        int maxGroup = _elapsedTime < GroupSizeTransitionTime ? EarlyMaxGroupSize : LateMaxGroupSize;
+        int groupSize = _random.Next(minGroup, maxGroup + 1);
         int remaining = MaxFrogs - currentFrogCount;
         if (groupSize > remaining)
             groupSize = remaining;

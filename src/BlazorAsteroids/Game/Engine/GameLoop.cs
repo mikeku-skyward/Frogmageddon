@@ -83,6 +83,7 @@ public class GameLoop : IGameLoop, IDisposable
         {
             // Phase 1: Read Input
             Vector2 direction = _inputManager.GetMovementDirection();
+            bool shiftPressed = _inputManager.IsKeyPressed("shift");
 
             // Get mouse position in world space for camera targeting
             var mouse = _inputManager.MousePosition;
@@ -106,6 +107,9 @@ public class GameLoop : IGameLoop, IDisposable
                 float worldY = click.Value.Y + _gameState.Camera.Position.Y;
                 _gameState.FireBullet(new Vector2(worldX, worldY));
             }
+
+            // Update stamina system before game state update
+            _gameState.StaminaSystem.Update(deltaTimeSec, shiftPressed);
 
             // Phase 2: Update State
             _gameState.Update(deltaTimeSec, direction, cursorWorld);
@@ -177,6 +181,7 @@ public class GameLoop : IGameLoop, IDisposable
         _gameState.Bullets.Clear();
         _gameState.Camera.SnapTo(_gameState.Player.Position);
         _gameState.AmmoSystem.Reset();
+        _gameState.StaminaSystem.Reset();
         _currentPhase = GamePhase.Playing;
     }
 

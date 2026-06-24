@@ -77,7 +77,8 @@ public class CanvasRenderer : IRenderer
             state.AmmoSystem.ReloadProgress,
             playerScreenX,
             playerScreenY,
-            state.Player.Size);
+            state.Player.Size,
+            Math.Clamp(state.StaminaSystem.Stamina, 0f, 1f));
     }
 
     public async Task RenderStartScreenAsync(int canvasWidth, int canvasHeight, StartButtonBounds buttonBounds)

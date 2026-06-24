@@ -10,6 +10,7 @@ public class GameState : IGameState
     public List<Bullet> Bullets { get; set; } = new();
     public FrogSpawner FrogSpawner { get; set; } = new();
     public AmmoSystem AmmoSystem { get; set; } = new();
+    public StaminaSystem StaminaSystem { get; set; } = new();
 
     /// <summary>
     /// The viewport (canvas) width — what the player sees on screen.
@@ -84,7 +85,7 @@ public class GameState : IGameState
                 }
             }
 
-            Vector2 velocity = movementDirection * (Player.Speed * speedMultiplier) * deltaTime;
+            Vector2 velocity = movementDirection * (Player.Speed * speedMultiplier * StaminaSystem.SpeedMultiplier) * deltaTime;
             Player.Position = Player.Position + velocity;
 
             // Clamp position to world bounds

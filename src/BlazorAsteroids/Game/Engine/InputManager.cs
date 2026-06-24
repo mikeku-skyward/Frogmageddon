@@ -5,7 +5,7 @@ namespace BlazorAsteroids.Game.Engine;
 
 public class InputManager : IInputManager
 {
-    private static readonly HashSet<string> ValidKeys = new() { "w", "a", "s", "d", "enter", "r" };
+    private static readonly HashSet<string> ValidKeys = new() { "w", "a", "s", "d", "enter", "r", "shift" };
     private readonly HashSet<string> _pressedKeys = new();
     private (float X, float Y)? _pendingClick;
     private (float X, float Y) _mousePosition;
