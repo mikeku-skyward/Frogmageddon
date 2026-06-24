@@ -73,6 +73,10 @@ public class GameLoop : IGameLoop, IDisposable
             HandleStartScreenInput();
             _ = _renderer.RenderStartScreenAsync(_gameState.CanvasWidth, _gameState.CanvasHeight, _buttonBounds);
         }
+        else if (_currentPhase == GamePhase.GameOver)
+        {
+            _ = _renderer.RenderGameOverAsync(_gameState.CanvasWidth, _gameState.CanvasHeight);
+        }
         else
         {
             // Phase 1: Read Input
@@ -97,6 +101,12 @@ public class GameLoop : IGameLoop, IDisposable
 
             // Phase 2: Update State
             _gameState.Update(deltaTimeSec, direction, cursorWorld);
+
+            // Check if player died
+            if (_gameState.Player.Health <= 0)
+            {
+                _currentPhase = GamePhase.GameOver;
+            }
 
             // Phase 3: Render (fire and forget)
             _ = _renderer.RenderAsync(_gameState);

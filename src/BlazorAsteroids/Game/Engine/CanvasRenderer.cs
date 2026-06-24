@@ -78,4 +78,12 @@ public class CanvasRenderer : IRenderer
                 buttonBounds.X, buttonBounds.Y, buttonBounds.Width, buttonBounds.Height);
         }
     }
+
+    public async Task RenderGameOverAsync(int canvasWidth, int canvasHeight)
+    {
+        if (_module is not null)
+        {
+            await _module.InvokeVoidAsync("drawGameOverScreen", _canvas, canvasWidth, canvasHeight);
+        }
+    }
 }

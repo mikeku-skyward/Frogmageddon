@@ -3,5 +3,6 @@ namespace BlazorAsteroids.Game.Models;
 public enum GamePhase
 {
     StartScreen,
-    Playing
+    Playing,
+    GameOver
 }

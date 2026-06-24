@@ -307,3 +307,25 @@ export function drawStartScreen(canvasElement, canvasWidth, canvasHeight, btnX, 
     ctx.font = 'bold 24px monospace';
     ctx.fillText('Start', btnX + btnW / 2, btnY + btnH / 2);
 }
+
+/**
+ * Draws the game over screen.
+ * @param {HTMLCanvasElement} canvasElement - The canvas DOM element
+ * @param {number} canvasWidth - Canvas width
+ * @param {number} canvasHeight - Canvas height
+ */
+export function drawGameOverScreen(canvasElement, canvasWidth, canvasHeight) {
+    const ctx = canvasElement.getContext('2d');
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+    // Dark background
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+    // Game over text in red
+    ctx.fillStyle = 'red';
+    ctx.font = 'bold 48px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('You died, Game Over.', canvasWidth / 2, canvasHeight / 2);
+}
