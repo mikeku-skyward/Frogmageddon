@@ -884,21 +884,26 @@ export function drawGameOverScreen(canvasElement, canvasWidth, canvasHeight, btn
 
     ctx.globalAlpha = uiAlpha;
 
-    // Calculate vertical center for title + gap + button as a group
-    const titleH = 48;
-    const gap = 30;
-    const totalH = titleH + gap + btnH;
+    // Calculate vertical layout for text block + gap + button
+    const textBlockH = 90;   // 3 lines of text
+    const gap = 40;
+    const totalH = textBlockH + gap + btnH;
     const groupStartY = (canvasHeight - totalH) / 2;
 
     // Game over text in red
     ctx.fillStyle = 'red';
-    ctx.font = 'bold 48px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('You died, Game Over.', canvasWidth / 2, groupStartY + titleH / 2);
+
+    ctx.font = 'bold 28px monospace';
+    ctx.fillText('Game Over.', canvasWidth / 2, groupStartY + 20);
+
+    ctx.font = 'bold 18px monospace';
+    ctx.fillText('Skyward has been taken over by Frogs.', canvasWidth / 2, groupStartY + 55);
+    ctx.fillText('All hope is lost!', canvasWidth / 2, groupStartY + 80);
 
     // Restart button
-    const restartBtnY = groupStartY + titleH + gap;
+    const restartBtnY = groupStartY + textBlockH + gap;
     ctx.fillStyle = '#333333';
     ctx.fillRect(btnX, restartBtnY, btnW, btnH);
 
