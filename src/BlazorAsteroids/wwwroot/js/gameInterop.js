@@ -1145,3 +1145,59 @@ export function playCroakSound() {
     osc2.start(ctx.currentTime + 0.1);
     osc2.stop(ctx.currentTime + 0.23);
 }
+
+/**
+ * Plays a "vwoosh" sound effect — a tonal sweep with noise for a powered dash feel.
+ */
+export function playDashSound() {
+    const ctx = getAudioContext();
+
+    // Tonal "V" attack — a quick rising tone that gives the initial punch
+    const tone = ctx.createOscillator();
+    const toneGain = ctx.createGain();
+
+    tone.connect(toneGain);
+    toneGain.connect(ctx.destination);
+
+    tone.type = 'sine';
+    tone.frequency.setValueAtTime(150, ctx.currentTime);
+    tone.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.06);
+    tone.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.2);
+
+    toneGain.gain.setValueAtTime(0.0, ctx.currentTime);
+    toneGain.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 0.02);
+    toneGain.gain.setValueAtTime(0.08, ctx.currentTime + 0.06);
+    toneGain.gain.exponentialRampToValueAtTime(0.005, ctx.currentTime + 0.2);
+
+    tone.start(ctx.currentTime);
+    tone.stop(ctx.currentTime + 0.2);
+
+    // Noise layer for the airy "woosh" tail
+    const bufferSize = ctx.sampleRate * 0.25;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(800, ctx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.2);
+    filter.Q.setValueAtTime(0.8, ctx.currentTime);
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.0, ctx.currentTime);
+    noiseGain.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 0.03);
+    noiseGain.gain.exponentialRampToValueAtTime(0.005, ctx.currentTime + 0.22);
+
+    noise.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+
+    noise.start(ctx.currentTime);
+    noise.stop(ctx.currentTime + 0.25);
+}

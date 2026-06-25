@@ -201,7 +201,14 @@ public class GameLoop : IGameLoop, IDisposable
             }
 
             // Update stamina system before game state update
+            bool wasSprinting = _gameState.StaminaSystem.IsSprinting;
             _gameState.StaminaSystem.Update(deltaTimeSec, shiftPressed);
+
+            // Play dash sound when sprint starts
+            if (!wasSprinting && _gameState.StaminaSystem.IsSprinting)
+            {
+                _ = _module!.InvokeVoidAsync("playDashSound");
+            }
 
             // Phase 2: Update State
             int healthBefore = _gameState.Player.Health;
