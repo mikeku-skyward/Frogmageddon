@@ -1757,24 +1757,24 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\mikeku\\.nuget\\packages\\": {},
+    "C:\\Users\\heidiy\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\mikeku\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj",
+      "projectUniqueName": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj",
       "projectName": "BlazorAsteroids",
-      "projectPath": "C:\\Users\\mikeku\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj",
-      "packagesPath": "C:\\Users\\mikeku\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\mikeku\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\obj\\",
+      "projectPath": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\BlazorAsteroids.csproj",
+      "packagesPath": "C:\\Users\\heidiy\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\src\\BlazorAsteroids\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\mikeku\\Documents\\GitHub\\Frogmageddon\\NuGet.Config",
-        "C:\\Users\\mikeku\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\heidiy\\Documents\\GitHub\\Frogmageddon\\NuGet.Config",
+        "C:\\Users\\heidiy\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],

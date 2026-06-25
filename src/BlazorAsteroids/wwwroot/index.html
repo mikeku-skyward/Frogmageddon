@@ -20,6 +20,17 @@
         <a class="dismiss">🗙</a>
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
+    <script>
+        // Heartbeat to keep the server alive (for standalone exe mode)
+        setInterval(function() {
+            fetch('/api/heartbeat').catch(function() {});
+        }, 5000);
+
+        // Signal the server immediately when the tab/window closes
+        window.addEventListener('beforeunload', function() {
+            navigator.sendBeacon('/api/shutdown');
+        });
+    </script>
 </body>
 
 </html>

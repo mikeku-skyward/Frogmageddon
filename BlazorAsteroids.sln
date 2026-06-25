@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorAsteroids", "src\Blaz
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorAsteroids.Tests", "tests\BlazorAsteroids.Tests\BlazorAsteroids.Tests.csproj", "{F4846A87-22FC-47B7-962B-E3EA5C766D6B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorAsteroids.Server", "src\BlazorAsteroids.Server\BlazorAsteroids.Server.csproj", "{A0B51163-99B0-4B47-A96B-505B38924FD9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,18 @@ Global
 		{F4846A87-22FC-47B7-962B-E3EA5C766D6B}.Release|x64.Build.0 = Release|Any CPU
 		{F4846A87-22FC-47B7-962B-E3EA5C766D6B}.Release|x86.ActiveCfg = Release|Any CPU
 		{F4846A87-22FC-47B7-962B-E3EA5C766D6B}.Release|x86.Build.0 = Release|Any CPU
+		{A0B51163-99B0-4B47-A96B-505B38924FD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0B51163-99B0-4B47-A96B-505B38924FD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0B51163-99B0-4B47-A96B-505B38924FD9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A0B51163-99B0-4B47-A96B-505B38924FD9}.Debug|x64.Build.0 = Debug|Any CPU
+		{A0B51163-99B0-4B47-A96B-505B38924FD9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A0B51163-99B0-4B47-A96B-505B38924FD9}.Debug|x86.Build.0 = Debug|Any CPU
+		{A0B51163-99B0-4B47-A96B-505B38924FD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0B51163-99B0-4B47-A96B-505B38924FD9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0B51163-99B0-4B47-A96B-505B38924FD9}.Release|x64.ActiveCfg = Release|Any CPU
+		{A0B51163-99B0-4B47-A96B-505B38924FD9}.Release|x64.Build.0 = Release|Any CPU
+		{A0B51163-99B0-4B47-A96B-505B38924FD9}.Release|x86.ActiveCfg = Release|Any CPU
+		{A0B51163-99B0-4B47-A96B-505B38924FD9}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -50,5 +64,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{A5D3836B-FDAD-4F5C-ACDD-27E5FB810B96} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{F4846A87-22FC-47B7-962B-E3EA5C766D6B} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{A0B51163-99B0-4B47-A96B-505B38924FD9} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal
