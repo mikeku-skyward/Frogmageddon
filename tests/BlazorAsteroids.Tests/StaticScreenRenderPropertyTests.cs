@@ -111,6 +111,13 @@ public class StaticScreenRenderPropertyTests
         // Set _lastRenderedPhase to null so first Tick triggers a render
         type.GetField("_lastRenderedPhase", flags)!.SetValue(gameLoop, null);
 
+        // For GameOver phase, set fade timer past the fade duration so we test
+        // the render-once behavior after the fade animation completes.
+        if (phase == GamePhase.GameOver)
+        {
+            type.GetField("_gameOverFadeTimer", flags)!.SetValue(gameLoop, 2.0f);
+        }
+
         // Set button bounds (needed for render calls)
         var buttonBounds = new StartButtonBounds(320f, 340f, 160f, 50f);
         type.GetField("_buttonBounds", flags)!.SetValue(gameLoop, buttonBounds);
@@ -135,9 +142,10 @@ public class StaticScreenRenderPropertyTests
     /// <summary>
     /// Property 7: Static screen render count stays at one regardless of tick count.
     /// For any number of ticks N (N ≥ 1) occurring while the game remains in the same static phase
-    /// (StartScreen, GameOver, or Paused) without a phase change, the render function for that screen
+    /// (GameOver or Paused) without a phase change, the render function for that screen
     /// SHALL be invoked exactly once (on the initial transition) and zero additional times during
     /// subsequent ticks.
+    /// Note: StartScreen is excluded because it renders continuously (frog sprites load async).
     /// Validates: Requirements 5.2, 5.3
     /// </summary>
     [Property(MaxTest = 100)]
@@ -147,8 +155,8 @@ public class StaticScreenRenderPropertyTests
         // Clamp tick count to a reasonable range (1-500)
         int tickCount = Math.Max(1, tickCountArg.Get % 500);
 
-        // Test all three static phases
-        var phases = new[] { GamePhase.StartScreen, GamePhase.GameOver, GamePhase.Paused };
+        // StartScreen is excluded — it now renders every tick (continuous render for async sprites)
+        var phases = new[] { GamePhase.GameOver, GamePhase.Paused };
 
         foreach (var phase in phases)
         {
@@ -168,5 +176,30 @@ public class StaticScreenRenderPropertyTests
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// Property: Start screen renders every tick (continuous rendering).
+    /// For any number of ticks N (N ≥ 1) while the game remains in StartScreen phase,
+    /// RenderStartScreenAsync SHALL be invoked exactly N times.
+    /// Validates: Requirements 2.1, 2.2
+    /// </summary>
+    [Property(MaxTest = 100)]
+    [Trait("Property", "StartScreen renders continuously every tick")]
+    public bool StartScreen_RendersContinuously_EveryTick(PositiveInt tickCountArg)
+    {
+        // Clamp tick count to a reasonable range (1-500)
+        int tickCount = Math.Max(1, tickCountArg.Get % 500);
+
+        var (gameLoop, renderer) = CreateGameLoopInPhase(GamePhase.StartScreen);
+
+        // Tick N times with a valid deltaTime (16ms = ~60fps)
+        for (int i = 0; i < tickCount; i++)
+        {
+            gameLoop.Tick(16.0f);
+        }
+
+        // StartScreen should render every tick (no render-once gate)
+        return renderer.StartScreenRenderCount == tickCount;
     }
 }

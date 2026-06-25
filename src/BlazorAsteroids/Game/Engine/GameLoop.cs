@@ -95,8 +95,9 @@ public class GameLoop : IGameLoop, IDisposable
         if (_currentPhase == GamePhase.StartScreen)
         {
             HandleStartScreenInput();
-            if (_currentPhase == GamePhase.StartScreen && _lastRenderedPhase != _currentPhase)
+            if (_currentPhase == GamePhase.StartScreen)
             {
+                // Continuously render — frog sprites load asynchronously
                 _ = _renderer.RenderStartScreenAsync(_gameState.CanvasWidth, _gameState.CanvasHeight, _buttonBounds);
                 _lastRenderedPhase = _currentPhase;
             }
@@ -405,7 +406,7 @@ public class GameLoop : IGameLoop, IDisposable
         _gameState.StaminaSystem.Reset();
         _gameState.PlayerAnimation.Reset();
         _lastRenderedPhase = null;
-        _currentPhase = GamePhase.Playing;
+        _currentPhase = GamePhase.StartScreen;
     }
 
     private async Task UpdateHighScoreAsync()
