@@ -159,10 +159,10 @@ public class GameState : IGameState
     /// Fires a bullet from the player toward a world-space target position.
     /// Gated through AmmoSystem.TryFire() — returns early if ammo is unavailable or reloading.
     /// </summary>
-    public void FireBullet(Vector2 targetWorld)
+    public bool FireBullet(Vector2 targetWorld)
     {
         if (!AmmoSystem.TryFire())
-            return;
+            return false;
 
         Vector2 direction = new Vector2(
             targetWorld.X - Player.Position.X,
@@ -174,6 +174,9 @@ public class GameState : IGameState
             var bullet = BulletPool.Acquire();
             bullet.Initialize(Player.Position, direction);
             Bullets.Add(bullet);
+            return true;
         }
+
+        return false;
     }
 }

@@ -172,6 +172,9 @@ public class GameLoop : IGameLoop, IDisposable
                 mouse.Y + _gameState.Camera.Position.Y
             );
 
+            // Track reload state to detect when a reload starts (from any trigger)
+            bool wasReloading = _gameState.AmmoSystem.IsReloading;
+
             // Check for reload input (R key)
             if (_inputManager.IsKeyPressed("r"))
             {
@@ -185,7 +188,16 @@ public class GameLoop : IGameLoop, IDisposable
                 // Convert screen click to world position
                 float worldX = click.Value.X + _gameState.Camera.Position.X;
                 float worldY = click.Value.Y + _gameState.Camera.Position.Y;
-                _gameState.FireBullet(new Vector2(worldX, worldY));
+                if (_gameState.FireBullet(new Vector2(worldX, worldY)))
+                {
+                    _ = _module!.InvokeVoidAsync("playShootSound");
+                }
+            }
+
+            // Play reload sound if a reload just started (manual or auto-triggered)
+            if (!wasReloading && _gameState.AmmoSystem.IsReloading)
+            {
+                _ = _module!.InvokeVoidAsync("playReloadSound");
             }
 
             // Update stamina system before game state update

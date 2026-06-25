@@ -969,3 +969,78 @@ export function drawPausedScreen(canvasElement, canvasWidth, canvasHeight, btnX,
     ctx.font = 'bold 24px monospace';
     ctx.fillText('Restart', btnX + btnW / 2, restartBtnY + btnH / 2);
 }
+
+// Audio context for sound effects (created on first use)
+let audioCtx = null;
+
+function getAudioContext() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return audioCtx;
+}
+
+/**
+ * Plays a short laser/shoot sound effect using the Web Audio API.
+ */
+export function playShootSound() {
+    const ctx = getAudioContext();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(600, ctx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.1);
+
+    gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.1);
+}
+
+/**
+ * Plays a battery recharge sound effect — a rising tone that builds in intensity.
+ */
+export function playReloadSound() {
+    const ctx = getAudioContext();
+
+    // Rising tone oscillator
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(80, ctx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 1.2);
+
+    gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 1.0);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.3);
+
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 1.3);
+
+    // Electric hum layer
+    const hum = ctx.createOscillator();
+    const humGain = ctx.createGain();
+
+    hum.connect(humGain);
+    humGain.connect(ctx.destination);
+
+    hum.type = 'sawtooth';
+    hum.frequency.setValueAtTime(60, ctx.currentTime);
+    hum.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 1.2);
+
+    humGain.gain.setValueAtTime(0.05, ctx.currentTime);
+    humGain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.9);
+    humGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.3);
+
+    hum.start(ctx.currentTime);
+    hum.stop(ctx.currentTime + 1.3);
+}
