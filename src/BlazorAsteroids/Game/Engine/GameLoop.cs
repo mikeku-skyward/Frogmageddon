@@ -220,6 +220,21 @@ public class GameLoop : IGameLoop, IDisposable
                 _ = _module!.InvokeVoidAsync("playScoreSound");
             }
 
+            // Play croak sound for frogs that just started hopping (limit to 1 per frame)
+            bool croakPlayed = false;
+            foreach (var frog in _gameState.Frogs)
+            {
+                if (frog.JustStartedHopping)
+                {
+                    frog.JustStartedHopping = false;
+                    if (!croakPlayed)
+                    {
+                        _ = _module!.InvokeVoidAsync("playCroakSound");
+                        croakPlayed = true;
+                    }
+                }
+            }
+
             // Check if player died
             if (_gameState.Player.Health <= 0)
             {

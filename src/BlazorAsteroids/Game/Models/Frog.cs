@@ -40,6 +40,11 @@ public class Frog : IPoolable
     public bool IsHopping => _state == FrogState.Hopping;
 
     /// <summary>
+    /// Set to true when the frog begins a new hop. Cleared after being consumed.
+    /// </summary>
+    public bool JustStartedHopping { get; set; }
+
+    /// <summary>
     /// Parameterless constructor for object pool usage. Creates an uninitialized instance.
     /// </summary>
     public Frog()
@@ -109,6 +114,7 @@ public class Frog : IPoolable
                     Rotation = MathF.Atan2(_hopDirection.Y, _hopDirection.X);
                     _state = FrogState.Hopping;
                     _stateTimer = HopDuration;
+                    JustStartedHopping = true;
                 }
                 break;
 

@@ -1089,3 +1089,59 @@ export function playScoreSound() {
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.2);
 }
+
+/**
+ * Plays a "ribbit" frog sound — two quick chirps with a descending pitch,
+ * mimicking the classic two-syllable frog call.
+ */
+export function playCroakSound() {
+    const ctx = getAudioContext();
+
+    // First syllable — "rib" (short, higher pitch dropping down)
+    const osc1 = ctx.createOscillator();
+    const filter1 = ctx.createBiquadFilter();
+    const gain1 = ctx.createGain();
+
+    osc1.connect(filter1);
+    filter1.connect(gain1);
+    gain1.connect(ctx.destination);
+
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(350, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.07);
+
+    filter1.type = 'lowpass';
+    filter1.frequency.setValueAtTime(500, ctx.currentTime);
+
+    gain1.gain.setValueAtTime(0.0, ctx.currentTime);
+    gain1.gain.linearRampToValueAtTime(0.05, ctx.currentTime + 0.005);
+    gain1.gain.setValueAtTime(0.05, ctx.currentTime + 0.04);
+    gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.08);
+
+    // Second syllable — "bit" (slightly lower, longer tail)
+    const osc2 = ctx.createOscillator();
+    const filter2 = ctx.createBiquadFilter();
+    const gain2 = ctx.createGain();
+
+    osc2.connect(filter2);
+    filter2.connect(gain2);
+    gain2.connect(ctx.destination);
+
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(280, ctx.currentTime + 0.1);
+    osc2.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.22);
+
+    filter2.type = 'lowpass';
+    filter2.frequency.setValueAtTime(400, ctx.currentTime + 0.1);
+
+    gain2.gain.setValueAtTime(0.0, ctx.currentTime + 0.1);
+    gain2.gain.linearRampToValueAtTime(0.05, ctx.currentTime + 0.105);
+    gain2.gain.setValueAtTime(0.05, ctx.currentTime + 0.16);
+    gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.23);
+
+    osc2.start(ctx.currentTime + 0.1);
+    osc2.stop(ctx.currentTime + 0.23);
+}
