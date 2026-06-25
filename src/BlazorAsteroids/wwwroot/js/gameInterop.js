@@ -1201,3 +1201,47 @@ export function playDashSound() {
     noise.start(ctx.currentTime);
     noise.stop(ctx.currentTime + 0.25);
 }
+
+/**
+ * Plays a "womp womp" sad trombone sound for the game over screen.
+ */
+export function playGameOverSound() {
+    const ctx = getAudioContext();
+
+    // First "womp" — descending tone
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+
+    osc1.type = 'triangle';
+    osc1.frequency.setValueAtTime(250, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.4);
+
+    gain1.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain1.gain.setValueAtTime(0.2, ctx.currentTime + 0.3);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.45);
+
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.45);
+
+    // Second "womp" — lower, slower descent
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(200, ctx.currentTime + 0.5);
+    osc2.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 1.2);
+
+    gain2.gain.setValueAtTime(0.0, ctx.currentTime + 0.5);
+    gain2.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.52);
+    gain2.gain.setValueAtTime(0.2, ctx.currentTime + 0.9);
+    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.3);
+
+    osc2.start(ctx.currentTime + 0.5);
+    osc2.stop(ctx.currentTime + 1.3);
+}

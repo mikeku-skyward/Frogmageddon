@@ -249,6 +249,7 @@ public class GameLoop : IGameLoop, IDisposable
                 _currentPhase = GamePhase.GameOver;
                 _gameOverFadeTimer = 0f;
                 _ = UpdateHighScoreAsync();
+                _ = _module!.InvokeVoidAsync("playGameOverSound");
             }
 
             // Phase 3: Render (fire and forget)
