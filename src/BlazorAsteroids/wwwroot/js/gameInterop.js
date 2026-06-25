@@ -1019,8 +1019,8 @@ export function playReloadSound() {
     oscillator.frequency.setValueAtTime(80, ctx.currentTime);
     oscillator.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 1.2);
 
-    gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 1.0);
+    gainNode.gain.setValueAtTime(0.075, ctx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.175, ctx.currentTime + 1.0);
     gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.3);
 
     oscillator.start(ctx.currentTime);
@@ -1037,10 +1037,55 @@ export function playReloadSound() {
     hum.frequency.setValueAtTime(60, ctx.currentTime);
     hum.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 1.2);
 
-    humGain.gain.setValueAtTime(0.05, ctx.currentTime);
-    humGain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.9);
+    humGain.gain.setValueAtTime(0.025, ctx.currentTime);
+    humGain.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 0.9);
     humGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.3);
 
     hum.start(ctx.currentTime);
     hum.stop(ctx.currentTime + 1.3);
+}
+
+/**
+ * Plays a short alert/damage sound effect — a quick descending buzz.
+ */
+export function playDamageSound() {
+    const ctx = getAudioContext();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    oscillator.type = 'square';
+    oscillator.frequency.setValueAtTime(400, ctx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.2);
+
+    gainNode.gain.setValueAtTime(0.4, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.25);
+}
+
+/**
+ * Plays a short positive chime sound when the player scores.
+ */
+export function playScoreSound() {
+    const ctx = getAudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(520, ctx.currentTime);
+    osc.frequency.setValueAtTime(780, ctx.currentTime + 0.08);
+
+    gain.gain.setValueAtTime(0.075, ctx.currentTime);
+    gain.gain.setValueAtTime(0.075, ctx.currentTime + 0.12);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.2);
 }

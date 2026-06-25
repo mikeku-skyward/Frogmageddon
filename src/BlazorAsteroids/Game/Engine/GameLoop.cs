@@ -204,7 +204,21 @@ public class GameLoop : IGameLoop, IDisposable
             _gameState.StaminaSystem.Update(deltaTimeSec, shiftPressed);
 
             // Phase 2: Update State
+            int healthBefore = _gameState.Player.Health;
+            int scoreBefore = _gameState.Player.Score;
             _gameState.Update(deltaTimeSec, direction, cursorWorld);
+
+            // Play damage sound if the player took a hit this frame
+            if (_gameState.Player.Health < healthBefore)
+            {
+                _ = _module!.InvokeVoidAsync("playDamageSound");
+            }
+
+            // Play score sound if the player's score increased
+            if (_gameState.Player.Score > scoreBefore)
+            {
+                _ = _module!.InvokeVoidAsync("playScoreSound");
+            }
 
             // Check if player died
             if (_gameState.Player.Health <= 0)
